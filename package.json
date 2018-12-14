@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup --config rollup.config.js"
   },
   "repository": {
     "type": "git",
@@ -16,5 +17,15 @@
   "bugs": {
     "url": "https://github.com/alexander-heimbuch/component-sandbox/issues"
   },
-  "homepage": "https://github.com/alexander-heimbuch/component-sandbox#readme"
+  "homepage": "https://github.com/alexander-heimbuch/component-sandbox#readme",
+  "dependencies": {
+    "rollup": "^0.67.4"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.0",
+    "@babel/core": "^7.2.0",
+    "@babel/preset-env": "^7.2.0",
+    "babel": "^6.23.0",
+    "rollup-plugin-babel": "^4.1.0"
+  }
 }
