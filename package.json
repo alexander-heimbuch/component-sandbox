@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rollup --config rollup.config.js"
+    "cleanup": "rm -rf dist/",
+    "build": "npm run cleanup && rollup --config rollup.config.js",
+    "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js"
   },
   "repository": {
     "type": "git",
@@ -19,13 +21,24 @@
   },
   "homepage": "https://github.com/alexander-heimbuch/component-sandbox#readme",
   "dependencies": {
-    "rollup": "^0.67.4"
+    "iframe-resizer": "^3.6.3",
+    "rollup": "^0.67.4",
+    "webpack-cli": "^3.1.2"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
     "babel": "^6.23.0",
-    "rollup-plugin-babel": "^4.1.0"
+    "html-webpack-plugin": "^3.2.0",
+    "raw-loader": "^1.0.0",
+    "rollup-plugin-alias": "^1.5.1",
+    "rollup-plugin-babel": "^4.1.0",
+    "rollup-plugin-cpy": "^1.1.0",
+    "rollup-plugin-serve": "^0.6.0",
+    "rollup-plugin-string": "^2.0.2",
+    "rollup-watch": "^4.3.1",
+    "webpack": "^4.27.1",
+    "webpack-dev-server": "^3.1.10"
   }
 }
