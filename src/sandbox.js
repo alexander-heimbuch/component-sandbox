@@ -27,7 +27,6 @@ export const parentApi = (iframe) => {
   }
 }
 
-
 export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
   const api = parentApi(iframe)
 

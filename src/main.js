@@ -1,36 +1,38 @@
-import { defaultAttributes, defaultErrorHandler, defaultResizeHandler, defaultLoadHandler } from './defaults'
+import { defaultAttributes, defaultErrorHandler, defaultResizeHandler } from './defaults'
 
-import { createIframe } from './utils'
+import { createIframe, getWindow } from './utils'
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi, registerErrorHandler } from './sandbox'
 
-export default function ({
+const frame = (attributes = defaultAttributes) => createIframe(attributes)
+
+const init = (iframe, {
   onError = defaultErrorHandler,
   onResize = defaultResizeHandler,
-  onLoad = defaultLoadHandler,
   content = '',
-  baseUrl,
-  attributes = defaultAttributes,
-} = {}) {
-  const iframe = createIframe(attributes)
+  baseUrl
+} = {}) => new Promise(resolve => {
+  if (!iframe || !getWindow(iframe)) {
+    console.warn(`initialised iframe is needed`)
+    return
+  }
 
   // Register the sandbox if the iframe was registered
-  iframe.addEventListener('DOMNodeInserted', () => {
-    registerIframeResizer({ iframe, onLoad, onResize })
-    registerErrorHandler({ iframe, onError })
+  registerErrorHandler({ iframe, onError })
+  registerIframeResizer({ iframe, onLoad: resolve, onResize })
 
-    sandboxContent({ iframe, content: `
-      <head>
-        ${charset()}
-        ${base(baseUrl)}
-        ${resetStyle()}
-      </head>
-      <body>
-        ${iframeApi()}
-        ${resizer()}
-        ${content}
-      </body>
-    `})
-  }, false)
+  sandboxContent({ iframe, content: `
+    <head>
+      ${charset()}
+      ${base(baseUrl)}
+      ${resetStyle()}
+    </head>
+    <body>
+      ${iframeApi()}
+      ${resizer()}
+      ${content}
+    </body>
+  `})
 
-  return iframe
-}
+})
+
+export default { frame, init }

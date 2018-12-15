@@ -17,7 +17,6 @@ export const createIframe = (attributes) => {
 }
 
 export const getWindow = iframe => iframe.contentWindow
-
 export const getDocument = iframe => getWindow(iframe).document
 
 export const sendMessage = win => ({ type, payload }) => {
@@ -29,7 +28,7 @@ export const sendMessage = win => ({ type, payload }) => {
   try {
     const message = JSON.stringify({ type, payload })
     win.postMessage(message, '*')
-  } catch (e) {}
+  } catch (e) {console.log(e)}
 }
 
 export const createListener = win => (evt, cb) => {

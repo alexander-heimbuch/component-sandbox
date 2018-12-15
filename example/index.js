@@ -1,30 +1,29 @@
 import sandbox from 'component-sandbox'
 
-const example = sandbox({
-  content: `
-  <script>
-      listen('fromParent', () => {
-        console.log('a message from outside')
-        emit({ type: 'fromIframe' })
-      })
-    </script>
-  `,
-  baseUrl: 'http://todomvc.com/',
-  onError: console.warn,
-  onAction: (action) => console.log('action', action),
-  onResize: console.log,
-  onLoad: ({ emit, listen }) => {
-    listen('fromIframe', () => {
-      console.log('a message from inside')
-    })
-
-    emit({ type: 'fromParent' })
-  }
-})
+const frame = sandbox.frame()
 
 window.addEventListener('load', () => {
-  example.className = 'example'
+  frame.className = 'example'
 
-  document.body.appendChild(example)
+  document.body.appendChild(frame)
+
+  sandbox.init(frame, {
+    content: `
+    <script>
+        listen('ping', () => {
+          console.log('ping')
+          emit({ type: 'pong' })
+        })
+      </script>
+    `,
+    baseUrl: 'http://todomvc.com/',
+    onError: console.warn,
+    onResize: console.log
+  }).then(({ listen, emit }) => {
+    listen('pong', () => {
+      console.log('pong')
+    })
+    emit({ type: 'ping' })
+  })
 })
 
