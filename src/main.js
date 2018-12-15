@@ -1,18 +1,36 @@
-import { defaultAttributes, defaultErrorHandler, defaultResizeHandler, defaultMessageHandler, defaultLoadHandler } from './defaults'
-import { createIframe, bootstrapIframe } from './sandbox'
+import { defaultAttributes, defaultErrorHandler, defaultResizeHandler, defaultLoadHandler } from './defaults'
+
+import { createIframe } from './utils'
+import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi, registerErrorHandler } from './sandbox'
 
 export default function ({
-  onMessage = defaultMessageHandler,
   onError = defaultErrorHandler,
   onResize = defaultResizeHandler,
   onLoad = defaultLoadHandler,
   content = '',
   baseUrl,
   attributes = defaultAttributes,
-  listeners = {}
 } = {}) {
   const iframe = createIframe(attributes)
-  iframe.addEventListener('DOMNodeInserted', () => bootstrapIframe(iframe, baseUrl, content, onError, onLoad, onResize, listeners), false)
+
+  // Register the sandbox if the iframe was registered
+  iframe.addEventListener('DOMNodeInserted', () => {
+    registerIframeResizer({ iframe, onLoad, onResize })
+    registerErrorHandler({ iframe, onError })
+
+    sandboxContent({ iframe, content: `
+      <head>
+        ${charset()}
+        ${base(baseUrl)}
+        ${resetStyle()}
+      </head>
+      <body>
+        ${iframeApi()}
+        ${resizer()}
+        ${content}
+      </body>
+    `})
+  }, false)
 
   return iframe
 }

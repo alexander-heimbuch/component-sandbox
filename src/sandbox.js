@@ -1,35 +1,35 @@
 import iframeResizerContent from 'raw-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js'
+import InlineScripts from 'raw-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer'
-import { setAttributes } from './utils'
 
-export const createIframe = (attributes) => {
-  let iframe = document.createElement('iframe')
-  return setAttributes(iframe, attributes)
+import { sendMessage, createListener, getDocument, getWindow } from './utils'
+
+export const charset = () => '<meta charset="utf-8"></meta>'
+export const base = (baseUrl) => `<base href="${ baseUrl ? baseUrl : '.' }"></base>`
+export const resizer = () => `<script type="text/javascript">${iframeResizerContent}</script>`
+export const resetStyle = () => `
+  <style>
+    body, html {
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+  `
+
+export const iframeApi = () => `<script>${InlineScripts}</script>`
+
+export const parentApi = (iframe) => {
+  const win = getWindow(iframe)
+
+  return {
+    emit: sendMessage(win),
+    listen: createListener(win)
+  }
 }
 
-export const bootstrapIframe = (iframe, baseUrl, content = '', onError, onLoad, onResize, listeners) => {
-  const sandboxWindow = iframe.contentWindow
-  const sandboxDocument = sandboxWindow.document
 
-  const outputListeners = []
-  const inputListeners = []
-
-  sandboxWindow.onerror = onError
-
-  Object.keys(listeners).forEach(type => inputListeners.push({
-    type,
-    cb: listeners[type]
-  }))
-
-  sandboxWindow.emit = ({ type, payload }) => outputListeners.forEach(listener => {
-    if (listener.type !== type) {
-      return
-    }
-
-    listener.cb && listener.cb(payload)
-  })
-
-  sandboxWindow.listen = (type, cb) => inputListeners.push({ type, cb })
+export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
+  const api = parentApi(iframe)
 
   iframeResizer({
     checkOrigin: false,
@@ -37,55 +37,31 @@ export const bootstrapIframe = (iframe, baseUrl, content = '', onError, onLoad, 
     initCallback: () => {
       onLoad({
         node: iframe,
-        window: sandboxWindow,
-        emit: ({ type, payload }) => {
-          inputListeners.forEach(listener => {
-            if (listener.type !== type) {
-              return
-            }
-
-            listener.cb && listener.cb(payload)
-          })
-        },
-        listen: (type, cb) => {
-          outputListeners.push({ type, cb })
-        }
+        ...api
       })
     },
     resizedCallback: ({ height, width }) => onResize({
       height,
       width,
-      node: iframe,
-      window: sandboxWindow
+      node: iframe
     })
   }, iframe)
+}
 
-  const charset = '<meta charset="utf-8"></meta>'
-  const base = `<base href="${ baseUrl ? baseUrl : '.' }"></base>`
-  const resizer = `<script type="text/javascript">${iframeResizerContent}</script>`
-  const resetStyle = `
-    <style>
-      body, html {
-        padding: 0;
-        margin: 0;
-      }
-    </style>
-  `
-
-  sandboxDocument.open()
-  sandboxDocument.write(`
+export const sandboxContent = ({ iframe, content }) => {
+  const doc = getDocument(iframe)
+  doc.open()
+  doc.write(`
     <!DOCTYPE html>
     <html>
-      <head>
-        ${charset}
-        ${base}
-        ${resetStyle}
-      </head>
-      <body>
-        ${resizer}
-        ${content}
-      </body>
+      ${content}
     </html>
   `)
-  sandboxDocument.close()
+  doc.close()
 }
+
+export const registerErrorHandler = ({ iframe, onError }) => {
+  const win = getWindow(iframe)
+  win.onError = onError
+}
+
