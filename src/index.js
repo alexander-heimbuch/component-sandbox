@@ -1,6 +1,6 @@
 import { defaultAttributes, defaultStyles, defaultErrorHandler, defaultResizeHandler } from './defaults'
 
-import { createIframe, getWindow } from './utils'
+import { createIframe, getWindow, getDocument } from './utils'
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi, registerErrorHandler } from './sandbox'
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles })

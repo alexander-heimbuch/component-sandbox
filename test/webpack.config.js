@@ -19,7 +19,7 @@ module.exports = {
   },
   resolve: {
     alias: {
-      'component-sandbox': path.resolve(__dirname, '..', 'src', 'main'),
+      'component-sandbox': path.resolve(__dirname, '..', 'src'),
       test: path.resolve('./test')
     }
   },
