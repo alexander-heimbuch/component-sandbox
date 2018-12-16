@@ -14,7 +14,6 @@ export const setStyles = (el, styles = {}) => {
   return el
 }
 
-
 export const createScript = (content = '') => {
   const script = document.createElement('script')
   script.text = content
@@ -40,7 +39,9 @@ export const sendMessage = win => ({ type, payload }) => {
   try {
     const message = JSON.stringify({ type, payload })
     win.postMessage(message, '*')
-  } catch (e) {console.log(e)}
+  } catch (e) {
+    console.log(e)
+  }
 }
 
 export const createListener = win => (evt, cb) => {

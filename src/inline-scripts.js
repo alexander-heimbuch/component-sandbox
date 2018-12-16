@@ -1,9 +1,12 @@
 window.onerror = function (msg, url, lineNo, columnNo, error) {
   onError(msg, url, lineNo, columnNo, error)
-  return true;
+  return true
 }
 
-Object.defineProperty(window, 'onerror', { configurable: false, writable: false });
+Object.defineProperty(window, 'onerror', {
+  configurable: false,
+  writable: false
+})
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
