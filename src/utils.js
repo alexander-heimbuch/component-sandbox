@@ -6,14 +6,26 @@ export const setAttributes = (el, attrs = {}) => {
   return el
 }
 
+export const setStyles = (el, styles = {}) => {
+  Object.keys(styles).forEach(property => {
+    el.style[property] = styles[property]
+  })
+
+  return el
+}
+
+
 export const createScript = (content = '') => {
   const script = document.createElement('script')
   script.text = content
 }
 
-export const createIframe = (attributes) => {
+export const createIframe = ({ attributes, styles }) => {
   let iframe = document.createElement('iframe')
-  return setAttributes(iframe, attributes)
+  setAttributes(iframe, attributes)
+  setStyles(iframe, styles)
+
+  return iframe
 }
 
 export const getWindow = iframe => iframe.contentWindow

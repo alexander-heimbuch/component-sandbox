@@ -1,9 +1,9 @@
-import { defaultAttributes, defaultErrorHandler, defaultResizeHandler } from './defaults'
+import { defaultAttributes, defaultStyles, defaultErrorHandler, defaultResizeHandler } from './defaults'
 
 import { createIframe, getWindow } from './utils'
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi, registerErrorHandler } from './sandbox'
 
-const frame = (attributes = defaultAttributes) => createIframe(attributes)
+const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles })
 
 const init = (iframe, {
   onError = defaultErrorHandler,
@@ -12,7 +12,7 @@ const init = (iframe, {
   baseUrl
 } = {}) => new Promise(resolve => {
   if (!iframe || !getWindow(iframe)) {
-    console.warn(`initialised iframe is needed`)
+    console.warn(`initialised iframe is required`)
     return
   }
 
@@ -32,7 +32,6 @@ const init = (iframe, {
       ${content}
     </body>
   `})
-
 })
 
 export default { frame, init }

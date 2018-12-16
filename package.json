@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "cleanup": "rm -rf dist/",
     "build": "npm run cleanup && rollup --config rollup.config.js",
-    "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js"
+    "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js",
+    "test:dev": "node test && NODE_ENV=development webpack-dev-server --progress --config ./test/webpack.config.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,7 @@
   },
   "homepage": "https://github.com/alexander-heimbuch/component-sandbox#readme",
   "dependencies": {
+    "fs-extra": "^7.0.1",
     "iframe-resizer": "^3.6.3",
     "rollup": "^0.67.4",
     "webpack-cli": "^3.1.2"
@@ -31,7 +33,11 @@
     "@babel/preset-env": "^7.2.0",
     "babel": "^6.23.0",
     "babel-loader": "^8.0.4",
+    "chai": "^4.2.0",
+    "css-loader": "^2.0.1",
+    "handlebars": "^4.0.12",
     "html-webpack-plugin": "^3.2.0",
+    "mocha": "^5.2.0",
     "raw-loader": "^1.0.0",
     "rollup-plugin-alias": "^1.5.1",
     "rollup-plugin-babel": "^4.1.0",
@@ -39,6 +45,9 @@
     "rollup-plugin-serve": "^0.6.0",
     "rollup-plugin-string": "^2.0.2",
     "rollup-watch": "^4.3.1",
+    "sinon": "^7.2.2",
+    "sinon-chai": "^3.3.0",
+    "style-loader": "^0.23.1",
     "webpack": "^4.27.1",
     "webpack-dev-server": "^3.1.10"
   }
