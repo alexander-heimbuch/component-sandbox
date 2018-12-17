@@ -3,11 +3,11 @@ export const defaultAttributes = {
   seamless: '',
   scrolling: 'no',
   frameborder: '0'
-}
+};
 
-export const defaultStyles = {}
+export const defaultStyles = {};
 
-export const defaultErrorHandler = console.warn
-export const defaultResizeHandler = () => void 0
-export const defaultMessageHandler = () => void 0
-export const defaultLoadHandler = () => void 0
+export const defaultErrorHandler = console.warn;
+export const defaultResizeHandler = () => void 0;
+export const defaultMessageHandler = () => void 0;
+export const defaultLoadHandler = () => void 0;

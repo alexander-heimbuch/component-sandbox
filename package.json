@@ -9,7 +9,8 @@
     "build": "npm run cleanup && webpack --config build/webpack.config.js && node build/prepare.js && cp -R src dist/src",
     "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js",
     "test:dev": "node test && NODE_ENV=development webpack-dev-server --progress --config ./test/webpack.config.js",
-    "lint": "prettier-standard 'src/**/*.js'"
+    "prettify": "prettier --write '{src,test}/**/*.js'",
+    "lint": "eslint --env browser, '{src,test}/**/*.js'"
   },
   "repository": {
     "type": "git",
@@ -30,7 +31,6 @@
     "iframe-resizer": "^3.6.3"
   },
   "devDependencies": {
-    "webpack-cli": "^3.1.2",
     "@babel/cli": "^7.2.0",
     "@babel/core": "^7.2.0",
     "@babel/preset-env": "^7.2.0",
@@ -38,12 +38,15 @@
     "babel-loader": "^8.0.4",
     "chai": "^4.2.0",
     "css-loader": "^2.0.1",
+    "eslint": "^5.10.0",
+    "eslint-config-defaults": "^9.0.0",
+    "eslint-plugin-prettier": "^3.0.0",
     "fs-extra": "^7.0.1",
     "handlebars": "^4.0.12",
     "html-webpack-plugin": "^3.2.0",
     "lodash": "^4.17.11",
     "mocha": "^5.2.0",
-    "prettier-standard": "^8.0.1",
+    "prettier": "^1.15.3",
     "raw-loader": "^1.0.0",
     "rollup-plugin-alias": "^1.5.1",
     "rollup-plugin-babel": "^4.1.0",
@@ -55,6 +58,7 @@
     "sinon-chai": "^3.3.0",
     "style-loader": "^0.23.1",
     "webpack": "^4.27.1",
+    "webpack-cli": "^3.1.2",
     "webpack-dev-server": "^3.1.10"
   }
 }

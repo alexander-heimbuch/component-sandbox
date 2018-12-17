@@ -1,13 +1,12 @@
-import iframeResizerContent from 'raw-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js'
-import InlineScripts from 'raw-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts'
-import { iframeResizer } from 'iframe-resizer'
+import iframeResizerContent from 'raw-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js';
+import InlineScripts from 'raw-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
+import { iframeResizer } from 'iframe-resizer';
 
-import { sendMessage, createListener, getDocument, getWindow } from './utils'
+import { sendMessage, createListener, getDocument, getWindow } from './utils';
 
-export const charset = () => '<meta charset="utf-8"></meta>'
-export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`
-export const resizer = () =>
-  `<script src="data:text/javascript;base64,${btoa(iframeResizerContent)}"></script>`
+export const charset = () => '<meta charset="utf-8"></meta>';
+export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`;
+export const resizer = () => `<script src="data:text/javascript;base64,${btoa(iframeResizerContent)}"></script>`;
 export const resetStyle = () => `
   <style>
     body, html {
@@ -15,21 +14,21 @@ export const resetStyle = () => `
       margin: 0;
     }
   </style>
-  `
+  `;
 
-export const iframeApi = () => `<script type="text/javascript" src="data:text/javascript;base64,${btoa(InlineScripts)}"></script>`
+export const iframeApi = () => `<script type="text/javascript" src="data:text/javascript;base64,${btoa(InlineScripts)}"></script>`;
 
 export const parentApi = iframe => {
-  const win = getWindow(iframe)
+  const win = getWindow(iframe);
 
   return {
     emit: sendMessage(win),
     listen: createListener(win)
-  }
-}
+  };
+};
 
 export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
-  const api = parentApi(iframe)
+  const api = parentApi(iframe);
 
   iframeResizer(
     {
@@ -39,7 +38,7 @@ export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
         onLoad({
           node: iframe,
           ...api
-        })
+        });
       },
       resizedCallback: ({ height, width }) =>
         onResize({
@@ -49,22 +48,22 @@ export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
         })
     },
     iframe
-  )
-}
+  );
+};
 
 export const sandboxContent = ({ iframe, content }) => {
-  const doc = getDocument(iframe)
-  doc.open()
+  const doc = getDocument(iframe);
+  doc.open();
   doc.write(`
     <!DOCTYPE html>
     <html>
       ${content}
     </html>
-  `)
-  doc.close()
-}
+  `);
+  doc.close();
+};
 
 export const registerErrorHandler = ({ iframe, onError }) => {
-  const win = getWindow(iframe)
-  win.onError = onError
-}
+  const win = getWindow(iframe);
+  win.onError = onError;
+};

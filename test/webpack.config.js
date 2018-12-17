@@ -1,13 +1,16 @@
 // IO
-const path = require('path')
-const glob = require('glob')
+const path = require('path');
+const glob = require('glob');
 
-const scripts = glob.sync('./test/**/*.test.js').reduce((result, file) =>
-  Object.assign({}, result, {
-    [path.parse(file).name]: file
-  }), {
+const scripts = glob.sync('./test/**/*.test.js').reduce(
+  (result, file) =>
+    Object.assign({}, result, {
+      [path.parse(file).name]: file
+    }),
+  {
     runtime: './test/runtime.js'
-  })
+  }
+);
 
 module.exports = {
   mode: 'development',
@@ -24,10 +27,12 @@ module.exports = {
     }
   },
   module: {
-    rules: [{
-      test: /\.css$/,
-      use: ['style-loader', 'css-loader']
-    }]
+    rules: [
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      }
+    ]
   },
   devServer: {
     contentBase: path.resolve('./tmp'),
@@ -35,4 +40,4 @@ module.exports = {
     host: '0.0.0.0',
     disableHostCheck: true
   }
-}
+};
