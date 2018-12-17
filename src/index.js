@@ -1,4 +1,4 @@
-import { defaultAttributes, defaultStyles, defaultResizeHandler } from './defaults';
+import { defaultAttributes, defaultStyles } from './defaults';
 
 import { createIframe, getWindow } from './utils';
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi } from './sandbox';
