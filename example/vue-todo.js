@@ -40,4 +40,4 @@ export default `
 <script src="http://todomvc.com/examples/vue/js/store.js" type="text/javascript"></script>
 <script src="http://todomvc.com/examples/vue/js/app.js" type="text/javascript"></script>
 <script src="http://todomvc.com/examples/vue/js/routes.js" type="text/javascript"></script>
-`
+`;

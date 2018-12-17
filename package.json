@@ -9,8 +9,8 @@
     "build": "npm run cleanup && webpack --config build/webpack.config.js && node build/prepare.js && cp -R src dist/src",
     "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js",
     "test:dev": "node test && NODE_ENV=development webpack-dev-server --progress --config ./test/webpack.config.js",
-    "prettify": "prettier --write '{src,test}/**/*.js'",
-    "lint": "eslint --env browser, '{src,test}/**/*.js'"
+    "prettify": "prettier --write '{src,test,example}/**/*.js'",
+    "lint": "eslint --env browser, '{src,test,example}/**/*.js'"
   },
   "repository": {
     "type": "git",

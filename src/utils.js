@@ -14,11 +14,6 @@ export const setStyles = (el, styles = {}) => {
   return el;
 };
 
-export const createScript = (content = '') => {
-  const script = document.createElement('script');
-  script.text = content;
-};
-
 export const createIframe = ({ attributes, styles }) => {
   let iframe = document.createElement('iframe');
   setAttributes(iframe, attributes);
