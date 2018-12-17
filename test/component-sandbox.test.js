@@ -201,24 +201,23 @@ describe('component-sandbox', () => {
       sandbox
         .init(frame, {
           content: `
-        <script>
-          listen('ping', function () {
-            emit({ type: 'pong', payload: 'some foo' })
-          })
-        </script>
-      `
+            <script>
+              listen('ping', function () {
+                emit({ type: 'pong', payload: 'some foo' })
+              })
+            </script>
+          `
         })
         .then(({ listen, emit }) => {
           listen('pong', payload => {
             expect(payload).to.equal(payload);
             done();
           });
-
           emit({ type: 'ping' });
         });
     });
 
-    it('can send objects as payloads', done => {
+    it('can send objects as payloads', (done) => {
       sandbox
         .init(frame, {
           content: `
@@ -233,7 +232,7 @@ describe('component-sandbox', () => {
           const message = { some: 'payload' };
 
           listen('pong', payload => {
-            expect(payload).to.equal(message);
+            expect(payload).to.deep.equal(message);
             done();
           });
 
