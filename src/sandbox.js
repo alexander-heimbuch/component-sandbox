@@ -2,7 +2,7 @@ import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeR
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { sendMessage, createListener, getWindow } from './utils';
+import { sendMessage, createListener, getWindow, getDocument } from './utils';
 
 export const charset = () => '<meta charset="utf-8"></meta>';
 export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`;
@@ -52,13 +52,24 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
 };
 
 export const sandboxContent = ({ iframe, content }) => {
-  iframe.setAttribute(
-    'srcdoc',
-    `
-    <!DOCTYPE html>
-    <html>
-      ${content}
-    </html>
-  `
-  );
+  const iframeContent = `<!DOCTYPE html>
+<html>
+${content}
+</html>`;
+
+  if ('srcdoc' in document.createElement('iframe')) {
+    // Use `srcdoc` attribute in modern browsers
+    iframe.setAttribute('srcdoc', iframeContent);
+  } else {
+    // Provide fallback for legacy browsers
+    const doc = getDocument(iframe);
+    doc.open('text/html');
+    doc.write(iframeContent);
+    doc.close();
+
+    // Compatibility with IE9
+    if (iframe.contentWindow) {
+      iframe.contentWindow.location = `data:text/html;charset=utf-8,${iframeContent}`;
+    }
+  }
 };

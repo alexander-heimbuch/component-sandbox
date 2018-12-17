@@ -50,7 +50,7 @@ Object.defineProperty(window, 'emit', {
 });
 
 window.onerror = function(msg, url, lineNo, columnNo, error) {
-  emit({ type: 'error', payload: { msg, url, lineNo, columnNo, error } });
+  window.emit({ type: 'error', payload: { msg, url, lineNo, columnNo, error } });
   return true;
 };
 
@@ -59,11 +59,11 @@ Object.defineProperty(window, 'onerror', {
   writable: false
 });
 
-listen('BOOTSTRAP', () => {
+window.listen('BOOTSTRAP', () => {
   INITIALIZED = true;
-  EVENT_BUFFER.forEach(emit);
+  EVENT_BUFFER.forEach(window.emit);
 });
 
-listen('ECHO', ({ type, payload }) => {
-  emit({ type, payload });
+window.listen('ECHO', ({ type, payload }) => {
+  window.emit({ type, payload });
 });
