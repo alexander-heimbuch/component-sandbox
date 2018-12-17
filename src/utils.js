@@ -29,6 +29,13 @@ export const createIframe = ({ attributes, styles }) => {
 
 export const getWindow = iframe => iframe.contentWindow;
 export const getDocument = iframe => getWindow(iframe).document;
+export const safeParse = payload => {
+  try {
+    return JSON.parse(payload);
+  } catch (e) {
+    return {};
+  }
+};
 
 export const sendMessage = win => ({ type, payload }) => {
   if (!win) {
@@ -36,12 +43,8 @@ export const sendMessage = win => ({ type, payload }) => {
     return;
   }
 
-  try {
-    const message = JSON.stringify({ type, payload });
-    win.postMessage(message, '*');
-  } catch (e) {
-    console.log(e);
-  }
+  const message = JSON.stringify({ type, payload });
+  win.postMessage(message, '*');
 };
 
 export const createListener = win => (evt, cb) => {
@@ -51,12 +54,9 @@ export const createListener = win => (evt, cb) => {
   }
 
   win.addEventListener('message', ({ data }) => {
-    try {
-      const { type, payload } = JSON.parse(data);
-
-      if (type === evt) {
-        cb(payload);
-      }
-    } catch (e) {}
+    const { type, payload } = safeParse(data);
+    if (type === evt) {
+      cb(payload);
+    }
   });
 };

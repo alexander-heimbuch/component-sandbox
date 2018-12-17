@@ -1,12 +1,13 @@
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-  window.onError(msg, url, lineNo, columnNo, error);
-  return true;
-};
+let INITIALIZED = false;
+const EVENT_BUFFER = [];
 
-Object.defineProperty(window, 'onerror', {
-  configurable: false,
-  writable: false
-});
+const safeParse = payload => {
+  try {
+    return JSON.parse(payload);
+  } catch (e) {
+    return {};
+  }
+};
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
@@ -19,13 +20,11 @@ Object.defineProperty(window, 'listen', {
     }
 
     window.addEventListener('message', ({ data }) => {
-      try {
-        const { type, payload } = JSON.parse(data);
+      const { type, payload } = safeParse(data);
 
-        if (type === evt) {
-          cb(payload);
-        }
-      } catch (e) {}
+      if (type === evt) {
+        cb(payload);
+      }
     });
   }
 });
@@ -40,9 +39,31 @@ Object.defineProperty(window, 'emit', {
       return;
     }
 
-    try {
-      const message = JSON.stringify({ type, payload });
-      window.postMessage(message, '*');
-    } catch (e) {}
+    if (!INITIALIZED) {
+      EVENT_BUFFER.push({ type, payload });
+      return;
+    }
+
+    const message = JSON.stringify({ type, payload });
+    window.postMessage(message, '*');
   }
+});
+
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+  emit({ type: 'error', payload: { msg, url, lineNo, columnNo, error } });
+  return true;
+};
+
+Object.defineProperty(window, 'onerror', {
+  configurable: false,
+  writable: false
+});
+
+listen('BOOTSTRAP', () => {
+  INITIALIZED = true;
+  EVENT_BUFFER.forEach(emit);
+});
+
+listen('ECHO', ({ type, payload }) => {
+  emit({ type, payload });
 });

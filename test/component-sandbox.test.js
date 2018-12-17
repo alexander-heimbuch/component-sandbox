@@ -139,59 +139,37 @@ describe('component-sandbox', () => {
           done();
         });
       });
-
-      it(`defines an error function on sandbox scope`, done => {
-        sandbox.init(frame).then(({ node }) => {
-          const win = getWindow(node);
-
-          expect(typeof win.onError).to.equal('function');
-          done();
-        });
-      });
     });
 
     describe(`resizing`, () => {
       it(`sets the frame node to it's content`, done => {
-        sandbox.init(frame, { content: '<div style="height: 100px"></div>' }).then(({ node }) => {
+        sandbox.init(frame, '<div style="height: 100px"></div>').then(({ node }) => {
           expect(node.offsetHeight).to.equal(100);
           done();
         });
       });
 
       it(`resizes the frame if it's content changes`, done => {
-        sandbox.init(frame, { content: '<div id="test-node"></div>' }).then(({ node }) => {
+        let testCount = 0;
+
+        sandbox.init(frame, '<div id="test-node"></div>').then(({ node, listen }) => {
           const testNode = getDocument(frame).getElementById('test-node');
 
-          testNode.style.height = '100px';
+          listen('resize', () => {
+            testCount = testCount + 1;
 
-          setTimeout(() => {
-            expect(node.offsetHeight).to.equal(100);
-            done();
-          }, 50);
-        });
-      });
-
-      it(`provides an resize handler`, done => {
-        let calls = 0;
-
-        sandbox
-          .init(frame, {
-            content: '<div id="test-node"></div>',
-            onResize: ({ height }) => {
-              calls = calls + 1;
-
-              if (calls === 1) {
-                expect(height).to.equal('0');
-              } else {
-                expect(height).to.equal('100');
-                done();
-              }
+            if (testCount === 1) {
+              expect(node.offsetHeight).to.equal(0);
             }
-          })
-          .then(({ node }) => {
-            const testNode = getDocument(node).getElementById('test-node');
-            testNode.style.height = '100px';
+
+            if (testCount === 2) {
+              expect(node.offsetHeight).to.equal(100);
+              done();
+            }
           });
+
+          testNode.style.height = '100px';
+        });
       });
     });
   });
@@ -199,15 +177,16 @@ describe('component-sandbox', () => {
   describe('messaging', () => {
     it('communicating with the sandbox', done => {
       sandbox
-        .init(frame, {
-          content: `
+        .init(
+          frame,
+          `
             <script>
               listen('ping', function () {
                 emit({ type: 'pong', payload: 'some foo' })
               })
             </script>
-          `
-        })
+        `
+        )
         .then(({ listen, emit }) => {
           listen('pong', payload => {
             expect(payload).to.equal(payload);
@@ -217,17 +196,18 @@ describe('component-sandbox', () => {
         });
     });
 
-    it('can send objects as payloads', (done) => {
+    it('can send objects as payloads', done => {
       sandbox
-        .init(frame, {
-          content: `
+        .init(
+          frame,
+          `
         <script>
           listen('ping', function (payload) {
             emit({ type: 'pong', payload: payload })
           })
         </script>
       `
-        })
+        )
         .then(({ listen, emit }) => {
           const message = { some: 'payload' };
 
@@ -241,22 +221,6 @@ describe('component-sandbox', () => {
     });
   });
 
-  describe('error handling', () => {
-    it('has a hook to add a custom error handler', done => {
-      sandbox.init(frame, {
-        content: `
-        <script>
-          throw new Error('foo')
-        </script>
-      `,
-        onError: error => {
-          expect(error).to.equal('Uncaught Error: foo');
-          done();
-        }
-      });
-    });
-  });
-
   describe('content location', () => {
     it(`sets the base url to "." if nothing is provided`, done => {
       sandbox.init(frame).then(({ node }) => {
@@ -267,10 +231,86 @@ describe('component-sandbox', () => {
     });
 
     it(`sets the base url to a custom value if provided`, done => {
-      sandbox.init(frame, { baseUrl: 'http://foo.bar' }).then(({ node }) => {
+      sandbox.init(frame, '', { baseUrl: 'http://foo.bar' }).then(({ node }) => {
         const [base] = getDocument(node).querySelectorAll('base');
         expect(base.getAttribute('href')).to.equal('http://foo.bar');
         done();
+      });
+    });
+  });
+
+  describe('events', () => {
+    describe('error', () => {
+      it('fires an error event in root scope', done => {
+        sandbox.init(frame, `<script>throw new Error('my-custom-test-error')</script>`).then(({ listen }) => {
+          listen('error', ({ msg }) => {
+            expect(msg).to.have.string('my-custom-test-error');
+            done();
+          });
+        });
+      });
+
+      it('fires an error event in a sub scope', done => {
+        sandbox
+          .init(
+            frame,
+            `<script>
+          listen('ping', () => {
+            throw new Error('my-custom-test-error')
+          })
+        </script>`
+          )
+          .then(({ listen, emit }) => {
+            listen('error', ({ msg }) => {
+              expect(msg).to.have.string('my-custom-test-error');
+              done();
+            });
+
+            emit({ type: 'ping' });
+          });
+      });
+    });
+
+    describe('resize', () => {
+      it('fires an resize event on init', done => {
+        sandbox.init(frame, '<div style="height: 100px;"></div>').then(({ listen }) => {
+          listen('resize', ({ height }) => {
+            expect(height).to.equal('100');
+            done();
+          });
+        });
+      });
+
+      it('fires an resize event on when the size changes', done => {
+        sandbox
+          .init(
+            frame,
+            `
+          <div style="height: 100px;" id="test"></div>
+          <script>
+            listen('ping', () => {
+              document.getElementById('test').style.height = '500px'
+            })
+          </script>
+        `
+          )
+          .then(({ listen, emit }) => {
+            let testCount = 0;
+
+            listen('resize', ({ height }) => {
+              testCount = testCount + 1;
+              if (testCount === 1) {
+                expect(height).to.equal('100');
+              }
+
+              if (testCount === 2) {
+                expect(height).to.equal('500');
+                done();
+              }
+            });
+
+            emit({ type: 'ping' });
+          });
       });
     });
   });

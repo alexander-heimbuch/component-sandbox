@@ -2,7 +2,7 @@ import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeR
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { sendMessage, createListener, getDocument, getWindow } from './utils';
+import { sendMessage, createListener, getWindow } from './utils';
 
 export const charset = () => '<meta charset="utf-8"></meta>';
 export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`;
@@ -27,24 +27,24 @@ export const parentApi = iframe => {
   };
 };
 
-export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
-  const api = parentApi(iframe);
+export const registerIframeResizer = ({ iframe, resolve }) => {
+  const { listen, emit } = parentApi(iframe);
 
   iframeResizer(
     {
       checkOrigin: false,
       log: false,
       initCallback: () => {
-        onLoad({
-          node: iframe,
-          ...api
-        });
+        emit({ type: 'BOOTSTRAP' });
+        resolve({ node: iframe, listen, emit });
       },
       resizedCallback: ({ height, width }) =>
-        onResize({
-          height,
-          width,
-          node: iframe
+        emit({
+          type: 'ECHO',
+          payload: {
+            type: 'resize',
+            payload: { height, width }
+          }
         })
     },
     iframe
@@ -52,18 +52,13 @@ export const registerIframeResizer = ({ iframe, onLoad, onResize }) => {
 };
 
 export const sandboxContent = ({ iframe, content }) => {
-  const doc = getDocument(iframe);
-  doc.open();
-  doc.write(`
+  iframe.setAttribute(
+    'srcdoc',
+    `
     <!DOCTYPE html>
     <html>
       ${content}
     </html>
-  `);
-  doc.close();
-};
-
-export const registerErrorHandler = ({ iframe, onError }) => {
-  const win = getWindow(iframe);
-  win.onError = onError;
+  `
+  );
 };
