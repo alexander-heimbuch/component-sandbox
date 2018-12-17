@@ -7,7 +7,7 @@ import { sendMessage, createListener, getDocument, getWindow } from './utils'
 export const charset = () => '<meta charset="utf-8"></meta>'
 export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`
 export const resizer = () =>
-  `<script type="text/javascript">${iframeResizerContent}</script>`
+  `<script src="data:text/javascript;base64,${btoa(iframeResizerContent)}"></script>`
 export const resetStyle = () => `
   <style>
     body, html {
@@ -17,7 +17,7 @@ export const resetStyle = () => `
   </style>
   `
 
-export const iframeApi = () => `<script>${InlineScripts}</script>`
+export const iframeApi = () => `<script type="text/javascript" src="data:text/javascript;base64,${btoa(InlineScripts)}"></script>`
 
 export const parentApi = iframe => {
   const win = getWindow(iframe)
