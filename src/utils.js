@@ -32,6 +32,12 @@ export const safeParse = payload => {
   }
 };
 
+export const getTargetOrigin = win => {
+  let remoteHost = win.location.origin;
+  remoteHost = typeof remoteHost === 'string' ? remoteHost.trim() : null;
+  return !remoteHost.trim() || remoteHost.indexOf('file://') === 0 ? '*' : remoteHost;
+};
+
 export const sendMessage = win => ({ type, payload }) => {
   if (!win) {
     console.warn(`not initialized, can't send message`, { type, payload });
@@ -39,7 +45,7 @@ export const sendMessage = win => ({ type, payload }) => {
   }
 
   const message = JSON.stringify({ type, payload });
-  win.postMessage(message, '*');
+  win.postMessage(message, getTargetOrigin(win.parent));
 };
 
 export const createListener = win => (evt, cb) => {
@@ -48,7 +54,11 @@ export const createListener = win => (evt, cb) => {
     return;
   }
 
-  win.addEventListener('message', ({ data }) => {
+  win.addEventListener('message', ({ origin, data }) => {
+    if (origin !== win.parent.location.origin) {
+      return;
+    }
+
     const { type, payload } = safeParse(data);
     if (type === evt) {
       cb(payload);

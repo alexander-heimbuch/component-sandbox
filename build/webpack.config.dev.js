@@ -1,12 +1,11 @@
-const HtmlWebpackPlugin = require('html-webpack-plugin')
-
-const path = require('path')
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const path = require('path');
 
 module.exports = {
   mode: 'development',
   devtool: 'source-map',
   entry: {
-    example: './example/index.js',
+    example: './example/index.js'
   },
   output: {
     filename: './tmp/[name].js'
@@ -26,4 +25,4 @@ module.exports = {
       template: path.resolve(__dirname, '..', 'example', 'index.html')
     })
   ]
-}
+};

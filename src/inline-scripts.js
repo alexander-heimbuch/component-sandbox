@@ -1,13 +1,19 @@
 let INITIALIZED = false;
 const EVENT_BUFFER = [];
 
-const safeParse = payload => {
+function getTargetOrigin(win) {
+  let remoteHost = win.location.origin;
+  remoteHost = typeof remoteHost === 'string' ? remoteHost.trim() : null;
+  return !remoteHost.trim() || remoteHost.indexOf('file://') === 0 ? '*' : remoteHost;
+}
+
+function safeParse(payload) {
   try {
     return JSON.parse(payload);
   } catch (e) {
     return {};
   }
-};
+}
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
@@ -19,9 +25,12 @@ Object.defineProperty(window, 'listen', {
       return;
     }
 
-    window.addEventListener('message', ({ data }) => {
-      const { type, payload } = safeParse(data);
+    window.addEventListener('message', ({ origin, data }) => {
+      if (origin !== window.parent.location.origin) {
+        return;
+      }
 
+      const { type, payload } = safeParse(data);
       if (type === evt) {
         cb(payload);
       }
@@ -45,7 +54,7 @@ Object.defineProperty(window, 'emit', {
     }
 
     const message = JSON.stringify({ type, payload });
-    window.postMessage(message, '*');
+    window.postMessage(message, getTargetOrigin(window.parent));
   }
 });
 

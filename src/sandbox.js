@@ -4,8 +4,8 @@ import { iframeResizer } from 'iframe-resizer';
 
 import { sendMessage, createListener, getWindow, getDocument } from './utils';
 
-export const charset = () => '<meta charset="utf-8"></meta>';
-export const base = baseUrl => `<base href="${baseUrl || '.'}"></base>`;
+export const charset = () => '<meta charset="utf-8">';
+export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
 export const resizer = () => `<script src="${iframeResizerContent}"></script>`;
 export const resetStyle = () => `
   <style>
@@ -51,11 +51,13 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
   );
 };
 
-export const sandboxContent = ({ iframe, content }) => {
+export const sandboxContent = ({ iframe, head, body }) => {
+  const doc = getDocument(iframe).cloneNode(true);
+  doc.head.insertAdjacentHTML('afterbegin', head);
+  doc.body.insertAdjacentHTML('beforeend', body);
+
   const iframeContent = `<!DOCTYPE html>
-<html>
-${content}
-</html>`;
+${doc.documentElement.innerHTML}`;
 
   if ('srcdoc' in document.createElement('iframe')) {
     // Use `srcdoc` attribute in modern browsers
@@ -66,10 +68,5 @@ ${content}
     doc.open('text/html');
     doc.write(iframeContent);
     doc.close();
-
-    // Compatibility with IE9
-    if (iframe.contentWindow) {
-      iframe.contentWindow.location = `data:text/html;charset=utf-8,${iframeContent}`;
-    }
   }
 };

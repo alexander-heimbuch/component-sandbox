@@ -1,5 +1,5 @@
-const fs = require('fs-extra')
-const pkg = require('../package')
-const { omit } = require('lodash')
+const fs = require('fs-extra');
+const pkg = require('../package');
+const { omit } = require('lodash');
 
-fs.writeJsonSync('dist/package.json', omit(pkg, 'scripts'))
+fs.writeJsonSync('dist/package.json', omit(pkg, 'scripts'));

@@ -1,4 +1,4 @@
-const { resolve } = require('path')
+const { resolve } = require('path');
 
 module.exports = {
   mode: 'production',
@@ -11,4 +11,4 @@ module.exports = {
     libraryTarget: 'commonjs2',
     filename: '[name].js'
   }
-}
+};

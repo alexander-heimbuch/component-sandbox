@@ -17,18 +17,12 @@ const init = (iframe, content = '', { baseUrl } = {}) =>
 
     sandboxContent({
       iframe,
-      content: `
-    <head>
-      ${charset()}
+      head: `${charset()}
       ${base(baseUrl)}
       ${resetStyle()}
-    </head>
-    <body>
       ${iframeApi()}
-      ${resizer()}
-      ${content}
-    </body>
-    `
+      ${resizer()}`,
+      body: content
     });
   });
 
