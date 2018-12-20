@@ -236,8 +236,6 @@ describe('component-sandbox', () => {
       `
         )
         .then(({ listen, emit }) => {
-          const message = 0;
-
           listen(
             'pong',
             payload => {
@@ -254,9 +252,68 @@ describe('component-sandbox', () => {
             'bar'
           );
 
-          emit({ type: 'ping', payload: message, source: 'foo' });
-          emit({ type: 'ping', payload: message, source: 'bar' });
+          emit({ type: 'ping', payload: 0, source: 'foo' });
+          emit({ type: 'ping', payload: 0, source: 'bar' });
         });
+    });
+
+    it(`can only send messages between dedicated parents and children`, done => {
+      const frame2 = sandbox.frame();
+      testbed.appendChild(frame2);
+
+      const promise1 = new Promise(resolve => {
+        sandbox
+          .init(
+            frame,
+            `
+        <script>
+          listen('ping', function (payload) {
+            emit({ type: 'pong', payload: payload + 10 })
+          });
+          listen('from2', function () {
+            throw new Error('unexpected');
+          });
+        </script>
+      `
+          )
+          .then(({ listen, emit }) => {
+            listen('pong', payload => {
+              expect(payload).to.equal(10);
+              resolve();
+            });
+
+            emit({ type: 'from1' });
+            emit({ type: 'ping', payload: 0 });
+          });
+      });
+
+      const promise2 = new Promise(resolve => {
+        sandbox
+          .init(
+            frame2,
+            `
+        <script>
+          listen('ping', function (payload) {
+            emit({ type: 'pong', payload: payload + 100 })
+          });
+          listen('from1', function () {
+            throw new Error('unexpected');
+          });
+        </script>
+      `
+          )
+          .then(({ listen, emit }) => {
+            listen('pong', payload => {
+              expect(payload).to.equal(100);
+              resolve();
+            });
+
+            emit({ type: 'from2' });
+            emit({ type: 'ping', payload: 0 });
+          });
+      });
+
+      Promise.all([promise1, promise2]).then(() => done());
     });
   });
 

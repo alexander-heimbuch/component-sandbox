@@ -69,4 +69,6 @@ window.listen('ECHO', ({ type, payload, source }) => {
 
 // Remove security relevant properties from the sandboxed `window` object
 delete window.parent;
+delete window.top;
+delete window.frameElement;
 delete window.opener;
