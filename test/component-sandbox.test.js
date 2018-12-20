@@ -219,6 +219,45 @@ describe('component-sandbox', () => {
           emit({ type: 'ping', payload: message });
         });
     });
+
+    it(`can send sourced events`, done => {
+      sandbox
+        .init(
+          frame,
+          `
+        <script>
+          listen('ping', function (payload, source) {
+            emit({ type: 'pong', payload: payload + 10, source: source })
+          }, 'foo')
+          listen('ping', function (payload, source) {
+            emit({ type: 'pong', payload: payload + 100, source: source })
+          }, 'bar')
+        </script>
+      `
+        )
+        .then(({ listen, emit }) => {
+          const message = 0;
+
+          listen(
+            'pong',
+            payload => {
+              expect(payload).to.equal(10);
+            },
+            'foo'
+          );
+          listen(
+            'pong',
+            payload => {
+              expect(payload).to.equal(100);
+              done();
+            },
+            'bar'
+          );
+
+          emit({ type: 'ping', payload: message, source: 'foo' });
+          emit({ type: 'ping', payload: message, source: 'bar' });
+        });
+    });
   });
 
   describe('content location', () => {

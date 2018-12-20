@@ -2,6 +2,10 @@
 
 JavaScript Component Sandbox based on [iFrameResizer](https://github.com/davidjbradshaw/iframe-resizer) with adaptive height and messaging abstraction.
 
+The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [iFrameResizer](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the iFrame whenever a mutation of the sandboxed contents is detected.
+
+Furthermore the Component Sandbox establishes a simple [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) based pub/sub communication channel between the host and the sandbox via globally registered `listen` and `emit` functions.
+
 ## Installation
 
 ```bash
@@ -77,14 +81,14 @@ sandbox.init(iframe, content?, options?).then(({ node, listen, emit }) => {})
 
 ### Messaging
 
-To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. In the sandbox the `emit` and `listen` methods are available on the scope.
+To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. Inside the sandbox the `emit` and `listen` methods are available on the global scope.
 
 ```javascript
-emit({ type: String, payload: Object })
+emit({ type: String, payload: any, source?: any})
 ```
 
 ```javascript
-listen(type: String, callback: Function)
+listen(type: String, callback: (payload: any, source?: any) => void , source?: any)
 ```
 
 ## Default Events
