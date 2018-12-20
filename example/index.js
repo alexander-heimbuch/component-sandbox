@@ -22,8 +22,7 @@ window.addEventListener('load', () => {
         foo.style.backgroundColor = color
       })
       </script>
-    `,
-      { baseUrl: 'http://todomvc.com/' }
+    `
     )
     .then(({ listen, emit }) => {
       listen('error', console.log);

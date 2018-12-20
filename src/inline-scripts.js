@@ -1,19 +1,7 @@
+/* global getTargetOrigin safeParse */
 let INITIALIZED = false;
 const EVENT_BUFFER = [];
 
-function getTargetOrigin(win) {
-  let remoteHost = win.location.origin;
-  remoteHost = typeof remoteHost === 'string' ? remoteHost.trim() : null;
-  return !remoteHost.trim() || remoteHost.indexOf('file://') === 0 ? '*' : remoteHost;
-}
-
-function safeParse(payload) {
-  try {
-    return JSON.parse(payload);
-  } catch (e) {
-    return {};
-  }
-}
 
 Object.defineProperty(window, 'listen', {
   configurable: false,

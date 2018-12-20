@@ -1,4 +1,5 @@
 import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js';
+import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-utils';
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
@@ -16,7 +17,8 @@ export const resetStyle = () => `
   </style>
   `;
 
-export const iframeApi = () => `<script type="text/javascript" src="${InlineScripts}"></script>`;
+export const iframeApi = () => `<script type="text/javascript" src="${InlineUtils}"></script>
+<script type="text/javascript" src="${InlineScripts}"></script>`;
 
 export const parentApi = iframe => {
   const win = getWindow(iframe);
