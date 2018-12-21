@@ -1,9 +1,9 @@
-/* global getTargetOrigin safeParse */
+/* global safeParse */
 let INITIALIZED = false;
 const EVENT_BUFFER = [];
 
-const PARENT = window.parent;
-const ORIGIN = PARENT.location.origin;
+let HOST_WINDOW = window;
+let ORIGIN = null;
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
@@ -15,14 +15,15 @@ Object.defineProperty(window, 'listen', {
       return;
     }
 
-    window.addEventListener('message', ({ origin, data, source: eventSource }) => {
-      if (origin !== ORIGIN || eventSource !== PARENT) {
+    window.addEventListener('message', ({ data, source: eventSource }) => {
+      const { type, payload, source, origin } = safeParse(data);
+      if (type !== evt) {
         return;
       }
 
-      const { type, payload, source } = safeParse(data);
-      if (type === evt && (typeof src === 'undefined' || src === source)) {
-        cb(payload, source);
+      const bypassOriginCheck = type === 'SYN' || (type === 'ECHO' && !INITIALIZED);
+      if ((bypassOriginCheck || origin === ORIGIN) && (typeof src === 'undefined' || src === source)) {
+        cb(payload, type === 'SYN' ? eventSource : source, origin);
       }
     });
   }
@@ -43,12 +44,12 @@ Object.defineProperty(window, 'emit', {
       return;
     }
 
-    const message = JSON.stringify({ type, payload, source });
-    window.postMessage(message, getTargetOrigin(ORIGIN));
+    const message = JSON.stringify({ type, payload, source, origin: ORIGIN });
+    HOST_WINDOW.postMessage(message, '*');
   }
 });
 
-window.onerror = function(msg, url, lineNo, columnNo, error) {
+window.onerror = (msg, url, lineNo, columnNo, error) => {
   window.emit({ type: 'error', payload: { msg, url, lineNo, columnNo, error } });
   return true;
 };
@@ -58,7 +59,13 @@ Object.defineProperty(window, 'onerror', {
   writable: false
 });
 
-window.listen('BOOTSTRAP', () => {
+window.listen('SYN', (payload, source, origin) => {
+  if (INITIALIZED) {
+    return;
+  }
+
+  HOST_WINDOW = source;
+  ORIGIN = origin;
   INITIALIZED = true;
   EVENT_BUFFER.forEach(window.emit);
 });

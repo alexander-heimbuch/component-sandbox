@@ -1,6 +1,16 @@
 /* global sinon describe it expect beforeEach afterEach */
 import sandbox from 'component-sandbox';
-import { getWindow, getDocument } from 'component-sandbox/utils';
+
+function allowSameOrigin(iframe) {
+  const sandboxAttr = iframe.getAttribute('sandbox') || '';
+  const sandboxRestrictions = sandboxAttr.trim().split(' ');
+  sandboxRestrictions.push('allow-same-origin');
+  iframe.setAttribute('sandbox', sandboxRestrictions.join(' ').trim());
+}
+
+function getDocument(iframe) {
+  return iframe.contentWindow.document;
+}
 
 describe('component-sandbox', () => {
   let testSandbox;
@@ -21,11 +31,11 @@ describe('component-sandbox', () => {
   });
 
   describe('interface', () => {
-    it('should export a frame function', () => {
+    it(`should export a 'frame' function`, () => {
       expect(typeof sandbox.frame).to.equal('function');
     });
 
-    it('should export a init function', () => {
+    it(`should export an 'init' function`, () => {
       expect(typeof sandbox.init).to.equal('function');
     });
   });
@@ -68,6 +78,7 @@ describe('component-sandbox', () => {
   describe('init', () => {
     describe('sandbox defaults', () => {
       it(`sets the document type to html`, done => {
+        allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           expect(getDocument(node).doctype.name).to.equal('html');
           done();
@@ -75,6 +86,7 @@ describe('component-sandbox', () => {
       });
 
       it(`sets the charset to utf8`, done => {
+        allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           const result = getDocument(node).querySelectorAll('meta[charset="utf-8"]');
 
@@ -84,6 +96,7 @@ describe('component-sandbox', () => {
       });
 
       it(`applies reset styles`, done => {
+        allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           const style = getDocument(node).querySelectorAll('style');
 
@@ -94,7 +107,7 @@ describe('component-sandbox', () => {
     });
 
     describe(`parent api`, () => {
-      it(`requires an iframe that is appended to the dom`, () => {
+      it(`requires an iframe that is appended to the DOM`, () => {
         sandbox.init();
         expect(console.warn).to.have.been.calledWith('initialised iframe is required');
       });
@@ -122,35 +135,51 @@ describe('component-sandbox', () => {
     });
 
     describe(`sandbox api`, () => {
-      it(`defines a listen function on sandbox scope`, done => {
-        sandbox.init(frame).then(({ node }) => {
-          const win = getWindow(node);
+      it(`defines a 'listen' function on sandbox scope`, done => {
+        allowSameOrigin(frame);
 
-          expect(typeof win.listen).to.equal('function');
+        sandbox.init(frame).then(({ node }) => {
+          expect(typeof node.contentWindow.listen).to.equal('function');
           done();
         });
       });
 
-      it(`defines an emit function on sandbox scope`, done => {
+      it(`sandboxes the 'listen' function on sandbox scope`, done => {
         sandbox.init(frame).then(({ node }) => {
-          const win = getWindow(node);
+          expect(() => node.contentWindow.listen).to.throw();
+          done();
+        });
+      });
 
-          expect(typeof win.emit).to.equal('function');
+      it(`defines an 'emit' function on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(typeof node.contentWindow.emit).to.equal('function');
+          done();
+        });
+      });
+
+      it(`sandboxes the 'emit' function on sandbox scope`, done => {
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => node.contentWindow.emit).to.throw();
           done();
         });
       });
     });
 
     describe(`resizing`, () => {
-      it(`sets the frame node to it's content`, done => {
+      it(`sets the frame node to its content`, done => {
         sandbox.init(frame, '<div style="height: 100px"></div>').then(({ node }) => {
           expect(node.offsetHeight).to.equal(100);
           done();
         });
       });
 
-      it(`resizes the frame if it's content changes`, done => {
+      it(`resizes the frame if its content changes`, done => {
         let testCount = 0;
+
+        allowSameOrigin(frame);
 
         sandbox.init(frame, '<div id="test-node"></div>').then(({ node, listen }) => {
           const testNode = getDocument(frame).getElementById('test-node');
@@ -318,7 +347,8 @@ describe('component-sandbox', () => {
   });
 
   describe('content location', () => {
-    it(`sets the base url to "." if nothing is provided`, done => {
+    it(`sets the base url to '.' if nothing is provided`, done => {
+      allowSameOrigin(frame);
       sandbox.init(frame).then(({ node }) => {
         const [base] = getDocument(node).querySelectorAll('base');
         expect(base.getAttribute('href')).to.equal('.');
@@ -327,6 +357,7 @@ describe('component-sandbox', () => {
     });
 
     it(`sets the base url to a custom value if provided`, done => {
+      allowSameOrigin(frame);
       sandbox.init(frame, '', { baseUrl: 'http://foo.bar' }).then(({ node }) => {
         const [base] = getDocument(node).querySelectorAll('base');
         expect(base.getAttribute('href')).to.equal('http://foo.bar');
@@ -368,7 +399,7 @@ describe('component-sandbox', () => {
     });
 
     describe('resize', () => {
-      it('fires an resize event on init', done => {
+      it('fires a resize event on init', done => {
         sandbox.init(frame, '<div style="height: 100px;"></div>').then(({ listen }) => {
           listen('resize', ({ height }) => {
             expect(height).to.equal('100');
@@ -377,7 +408,7 @@ describe('component-sandbox', () => {
         });
       });
 
-      it('fires an resize event on when the size changes', done => {
+      it('fires a resize event when the size changes', done => {
         sandbox
           .init(
             frame,
@@ -385,8 +416,8 @@ describe('component-sandbox', () => {
           <div style="height: 100px;" id="test"></div>
           <script>
             listen('ping', () => {
-              document.getElementById('test').style.height = '500px'
-            })
+              document.getElementById('test').style.height = '500px';
+            });
           </script>
         `
           )

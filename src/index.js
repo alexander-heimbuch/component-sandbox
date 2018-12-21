@@ -1,15 +1,26 @@
 import { defaultAttributes, defaultStyles } from './defaults';
 
-import { createIframe, getWindow } from './utils';
+import { createIframe } from './utils';
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi } from './sandbox';
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles });
 
 const init = (iframe, content = '', { baseUrl } = {}) =>
   new Promise(resolve => {
-    if (!iframe || !getWindow(iframe)) {
+    if (!iframe || !iframe.contentWindow) {
       console.warn(`initialised iframe is required`);
       return;
+    }
+
+    // Verify `sandbox` attribute if available
+    const sandboxAttr = iframe.getAttribute('sandbox') || '';
+    if (sandboxAttr.indexOf('allow-scripts') === -1) {
+      console.warn(`sandbox restriction 'allow-scripts' needs to be set`);
+
+      // Force availability of the `allow-scripts` sandbox restriction
+      const sandboxRestrictions = sandboxAttr.trim().split(' ');
+      sandboxRestrictions.push('allow-scripts');
+      iframe.setAttribute('sandbox', sandboxRestrictions.join(' ').trim());
     }
 
     // Register the sandbox if the iframe was registered
@@ -20,9 +31,9 @@ const init = (iframe, content = '', { baseUrl } = {}) =>
       head: `${charset()}
       ${base(baseUrl)}
       ${resetStyle()}
-      ${iframeApi()}
-      ${resizer()}`,
-      body: content
+      ${iframeApi()}`,
+      body: `${content}
+      ${resizer()}`
     });
   });
 

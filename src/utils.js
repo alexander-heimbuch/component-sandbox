@@ -1,4 +1,4 @@
-/* global getTargetOrigin safeParse*/
+/* global safeParse */
 import 'script-loader!./inline-utils';
 
 export const setAttributes = (el, attrs = {}) => {
@@ -25,33 +25,35 @@ export const createIframe = ({ attributes, styles }) => {
   return iframe;
 };
 
-export const getWindow = iframe => iframe.contentWindow;
-export const getDocument = iframe => getWindow(iframe).document;
+export const guid = () => {
+  function s4() {
+    return Math.floor((1 + Math.random()) * 0x10000)
+      .toString(16)
+      .substring(1);
+  }
+  return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
+};
 
-export const sendMessage = win => ({ type, payload, source }) => {
+export const sendMessage = (win, origin) => ({ type, payload, source }) => {
   if (!win) {
     console.warn(`not initialized, can't send message`, { type, payload });
     return;
   }
 
-  const message = JSON.stringify({ type, payload, source });
-  win.postMessage(message, getTargetOrigin(win.origin));
+  const message = JSON.stringify({ type, payload, source, origin });
+  win.postMessage(message, '*');
 };
 
-export const createListener = (win, iframe) => (evt, cb, src) => {
+export const createListener = (win, _origin) => (evt, cb, src) => {
   if (!win) {
     console.warn(`not initialized, can't register listener for '${evt}'`);
     return;
   }
 
-  win.addEventListener('message', ({ origin, data, source: eventSource }) => {
-    if (origin !== win.origin || eventSource !== iframe.contentWindow) {
-      return;
-    }
-
-    const { type, payload, source } = safeParse(data);
-    if (type === evt && (typeof src === 'undefined' || src === source)) {
-      cb(payload, source);
+  win.addEventListener('message', ({ data }) => {
+    const { type, payload, source, origin } = safeParse(data);
+    if (type === evt && origin === _origin && (typeof src === 'undefined' || src === source)) {
+      cb(payload, source, origin);
     }
   });
 };

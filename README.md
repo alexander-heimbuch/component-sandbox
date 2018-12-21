@@ -6,6 +6,10 @@ The goal of this project is to create a secure sandbox around UI components to s
 
 Furthermore the Component Sandbox establishes a simple [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) based pub/sub communication channel between the host and the sandbox via globally registered `listen` and `emit` functions.
 
+## Security
+
+Every sandboxed iframe mandatorily gets initialized with the [`sandbox` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox) in place. Also the availability of the `allow-scripts` restriction is required and enforced. Besides that you are free to lift all other sandbox restrictions if required for your use case, including the `allow-same-origin` restriction.
+
 ## Installation
 
 ```bash

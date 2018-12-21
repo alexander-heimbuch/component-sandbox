@@ -2,7 +2,8 @@ export const defaultAttributes = {
   'min-width': '100%',
   seamless: '',
   scrolling: 'no',
-  frameborder: '0'
+  frameborder: '0',
+  sandbox: 'allow-scripts'
 };
 
 export const defaultStyles = {};

@@ -3,72 +3,60 @@ import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":["@babel/p
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { sendMessage, createListener, getWindow, getDocument } from './utils';
+import { createListener, guid, sendMessage } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
 export const resizer = () => `<script src="${iframeResizerContent}"></script>`;
-export const resetStyle = () => `
-  <style>
-    body, html {
-      padding: 0;
-      margin: 0;
-    }
-  </style>
-  `;
+export const resetStyle = () => `<style>
+body, html {
+  padding: 0;
+  margin: 0;
+}
+</style>`;
 
 export const iframeApi = () => `<script type="text/javascript" src="${InlineUtils}"></script>
 <script type="text/javascript" src="${InlineScripts}"></script>`;
 
-export const parentApi = iframe => {
-  const win = getWindow(iframe);
-
-  return {
-    emit: sendMessage(win),
-    listen: createListener(win, iframe)
-  };
-};
-
 export const registerIframeResizer = ({ iframe, resolve }) => {
-  const { listen, emit } = parentApi(iframe);
+  const uuid = guid();
+  const listen = createListener(window, uuid);
+  const emit = sendMessage(iframe.contentWindow, uuid);
 
   iframeResizer(
     {
       checkOrigin: false,
       log: false,
       initCallback: () => {
-        emit({ type: 'BOOTSTRAP' });
+        emit({ type: 'SYN' });
         resolve({ node: iframe, listen, emit });
       },
-      resizedCallback: ({ height, width }) =>
+      resizedCallback: ({ height, width }) => {
         emit({
           type: 'ECHO',
           payload: {
             type: 'resize',
             payload: { height, width }
           }
-        })
+        });
+      }
     },
     iframe
   );
 };
 
 export const sandboxContent = ({ iframe, head, body }) => {
-  const doc = getDocument(iframe);
-  const clone = doc.cloneNode(true);
-  clone.head.insertAdjacentHTML('afterbegin', head);
-  clone.body.insertAdjacentHTML('beforeend', body);
-
   const iframeContent = `<!DOCTYPE html>
-${clone.documentElement.innerHTML}`;
+<html lang="en">
+<head>${head}</head>
+<body>${body}</body>
+</html>`;
 
   if ('srcdoc' in document.createElement('iframe')) {
     // Use `srcdoc` attribute in modern browsers
     iframe.setAttribute('srcdoc', iframeContent);
   } else {
     // Provide fallback for legacy browsers
-    doc.open('text/html');
-    doc.write(iframeContent);
-    doc.close();
+    iframe.setAttribute('src', `data:text/html;charset=utf-8,${iframeContent}`);
   }
 };
