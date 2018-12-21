@@ -1,4 +1,5 @@
 import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js';
+import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-utils';
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
@@ -16,14 +17,15 @@ export const resetStyle = () => `
   </style>
   `;
 
-export const iframeApi = () => `<script type="text/javascript" src="${InlineScripts}"></script>`;
+export const iframeApi = () => `<script type="text/javascript" src="${InlineUtils}"></script>
+<script type="text/javascript" src="${InlineScripts}"></script>`;
 
 export const parentApi = iframe => {
   const win = getWindow(iframe);
 
   return {
     emit: sendMessage(win),
-    listen: createListener(win)
+    listen: createListener(win, iframe)
   };
 };
 
@@ -52,19 +54,19 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
 };
 
 export const sandboxContent = ({ iframe, head, body }) => {
-  const doc = getDocument(iframe).cloneNode(true);
-  doc.head.insertAdjacentHTML('afterbegin', head);
-  doc.body.insertAdjacentHTML('beforeend', body);
+  const doc = getDocument(iframe);
+  const clone = doc.cloneNode(true);
+  clone.head.insertAdjacentHTML('afterbegin', head);
+  clone.body.insertAdjacentHTML('beforeend', body);
 
   const iframeContent = `<!DOCTYPE html>
-${doc.documentElement.innerHTML}`;
+${clone.documentElement.innerHTML}`;
 
   if ('srcdoc' in document.createElement('iframe')) {
     // Use `srcdoc` attribute in modern browsers
     iframe.setAttribute('srcdoc', iframeContent);
   } else {
     // Provide fallback for legacy browsers
-    const doc = getDocument(iframe);
     doc.open('text/html');
     doc.write(iframeContent);
     doc.close();

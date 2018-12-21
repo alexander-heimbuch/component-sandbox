@@ -1,38 +1,28 @@
+/* global getTargetOrigin safeParse */
 let INITIALIZED = false;
 const EVENT_BUFFER = [];
 
-function getTargetOrigin(win) {
-  let remoteHost = win.location.origin;
-  remoteHost = typeof remoteHost === 'string' ? remoteHost.trim() : null;
-  return !remoteHost.trim() || remoteHost.indexOf('file://') === 0 ? '*' : remoteHost;
-}
-
-function safeParse(payload) {
-  try {
-    return JSON.parse(payload);
-  } catch (e) {
-    return {};
-  }
-}
+const PARENT = window.parent;
+const ORIGIN = PARENT.location.origin;
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
   writable: false,
   enumerable: false,
-  value: (evt, cb) => {
+  value: (evt, cb, src) => {
     if (!window) {
       console.warn(`not initialized, can't register listener for '${evt}'`);
       return;
     }
 
-    window.addEventListener('message', ({ origin, data }) => {
-      if (origin !== window.parent.location.origin) {
+    window.addEventListener('message', ({ origin, data, source: eventSource }) => {
+      if (origin !== ORIGIN || eventSource !== PARENT) {
         return;
       }
 
-      const { type, payload } = safeParse(data);
-      if (type === evt) {
-        cb(payload);
+      const { type, payload, source } = safeParse(data);
+      if (type === evt && (typeof src === 'undefined' || src === source)) {
+        cb(payload, source);
       }
     });
   }
@@ -42,7 +32,7 @@ Object.defineProperty(window, 'emit', {
   configurable: false,
   writable: false,
   enumerable: false,
-  value: ({ type, payload }) => {
+  value: ({ type, payload, source }) => {
     if (!window) {
       console.warn(`not initialized, can't send message`, { type, payload });
       return;
@@ -53,8 +43,8 @@ Object.defineProperty(window, 'emit', {
       return;
     }
 
-    const message = JSON.stringify({ type, payload });
-    window.postMessage(message, getTargetOrigin(window.parent));
+    const message = JSON.stringify({ type, payload, source });
+    window.postMessage(message, getTargetOrigin(ORIGIN));
   }
 });
 
@@ -73,6 +63,12 @@ window.listen('BOOTSTRAP', () => {
   EVENT_BUFFER.forEach(window.emit);
 });
 
-window.listen('ECHO', ({ type, payload }) => {
-  window.emit({ type, payload });
+window.listen('ECHO', ({ type, payload, source }) => {
+  window.emit({ type, payload, source });
 });
+
+// Remove security relevant properties from the sandboxed `window` object
+delete window.parent;
+delete window.top;
+delete window.frameElement;
+delete window.opener;
