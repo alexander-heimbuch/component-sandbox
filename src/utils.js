@@ -1,5 +1,4 @@
-/* global safeParse */
-import 'script-loader!./inline-utils';
+import { safeParse } from './inline-utils';
 
 export const setAttributes = (el, attrs = {}) => {
   Object.keys(attrs).forEach(property => {

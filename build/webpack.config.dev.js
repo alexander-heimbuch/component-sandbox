@@ -1,18 +1,19 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const path = require('path');
+const { resolve } = require('path');
 
 module.exports = {
   mode: 'development',
   devtool: 'source-map',
   entry: {
-    example: './example/index.js'
+    example: resolve(__dirname, '..', 'example', 'index.js')
   },
   output: {
-    filename: './tmp/[name].js'
+    filename: '[name].js',
+    path: resolve(__dirname, '..', 'tmp')
   },
   resolve: {
     alias: {
-      'component-sandbox': path.resolve(__dirname, '..', 'src')
+      'component-sandbox': resolve(__dirname, '..', 'src')
     }
   },
   devServer: {
@@ -22,7 +23,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       filename: 'index.html',
-      template: path.resolve(__dirname, '..', 'example', 'index.html')
+      template: resolve(__dirname, '..', 'example', 'index.html')
     })
   ]
 };

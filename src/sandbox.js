@@ -1,6 +1,6 @@
 import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeResizer.contentWindow.min.js';
-import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-utils';
-import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":["@babel/preset-env"]}!./inline-scripts';
+import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-utils';
+import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
 import { createListener, guid, sendMessage } from './utils';
@@ -15,7 +15,8 @@ body, html {
 }
 </style>`;
 
-export const iframeApi = () => `<script type="text/javascript" src="${InlineUtils}"></script>
+export const iframeApi = () => `<script>var exports = {}; </script>
+<script type="text/javascript" src="${InlineUtils}"></script>
 <script type="text/javascript" src="${InlineScripts}"></script>`;
 
 export const registerIframeResizer = ({ iframe, resolve }) => {
