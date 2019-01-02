@@ -1,6 +1,6 @@
 import { defaultAttributes, defaultStyles } from './defaults';
 
-import { createIframe } from './utils';
+import { createIframe, warn } from './utils';
 import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi } from './sandbox';
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles });
@@ -8,14 +8,14 @@ const frame = (attributes = defaultAttributes, styles = defaultStyles) => create
 const init = (iframe, content = '', { baseUrl } = {}) =>
   new Promise(resolve => {
     if (!iframe || !iframe.contentWindow) {
-      console.warn(`initialised iframe is required`);
+      warn(`initialized iframe is required`);
       return;
     }
 
     // Verify `sandbox` attribute if available
     const sandboxAttr = iframe.getAttribute('sandbox') || '';
     if (sandboxAttr.indexOf('allow-scripts') === -1) {
-      console.warn(`sandbox restriction 'allow-scripts' needs to be set`);
+      warn(`sandbox restriction 'allow-scripts' needs to be set`);
 
       // Force availability of the `allow-scripts` sandbox restriction
       const sandboxRestrictions = sandboxAttr.trim().split(' ');

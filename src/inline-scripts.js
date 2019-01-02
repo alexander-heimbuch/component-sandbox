@@ -1,4 +1,4 @@
-/* global safeParse */
+/* global safeParse, warn */
 let INITIALIZED = false;
 const EVENT_BUFFER = [];
 
@@ -11,7 +11,7 @@ Object.defineProperty(window, 'listen', {
   enumerable: false,
   value: (evt, cb, src) => {
     if (!window) {
-      console.warn(`not initialized, can't register listener for '${evt}'`);
+      warn(`not initialized, can't register listener for '${evt}'`);
       return;
     }
 
@@ -21,9 +21,9 @@ Object.defineProperty(window, 'listen', {
         return;
       }
 
-      const bypassOriginCheck = type === 'SYN' || (type === 'ECHO' && !INITIALIZED);
+      const bypassOriginCheck = type === 'SBX:SYN' || (type === 'SBX:ECHO' && !INITIALIZED);
       if ((bypassOriginCheck || origin === ORIGIN) && (typeof src === 'undefined' || src === source)) {
-        cb(payload, type === 'SYN' ? eventSource : source, origin);
+        cb(payload, type === 'SBX:SYN' ? eventSource : source, origin);
       }
     });
   }
@@ -35,7 +35,7 @@ Object.defineProperty(window, 'emit', {
   enumerable: false,
   value: ({ type, payload, source }) => {
     if (!window) {
-      console.warn(`not initialized, can't send message`, { type, payload });
+      warn(`not initialized, can't send message`, { type, payload });
       return;
     }
 
@@ -50,7 +50,7 @@ Object.defineProperty(window, 'emit', {
 });
 
 window.onerror = (msg, url, lineNo, columnNo, error) => {
-  window.emit({ type: 'error', payload: { msg, url, lineNo, columnNo, error } });
+  window.emit({ type: 'SBX:ERROR', payload: { msg, url, lineNo, columnNo, error } });
   return true;
 };
 
@@ -59,7 +59,7 @@ Object.defineProperty(window, 'onerror', {
   writable: false
 });
 
-window.listen('SYN', (payload, source, origin) => {
+window.listen('SBX:SYN', (payload, source, origin) => {
   if (INITIALIZED) {
     return;
   }
@@ -70,7 +70,7 @@ window.listen('SYN', (payload, source, origin) => {
   EVENT_BUFFER.forEach(window.emit);
 });
 
-window.listen('ECHO', ({ type, payload, source }) => {
+window.listen('SBX:ECHO', ({ type, payload, source }) => {
   window.emit({ type, payload, source });
 });
 

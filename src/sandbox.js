@@ -3,7 +3,7 @@ import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { createListener, guid, sendMessage } from './utils';
+import { createListener, guid, sendMessage, warn } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
@@ -29,15 +29,15 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
       checkOrigin: false,
       log: false,
       initCallback: () => {
-        emit({ type: 'SYN' });
+        emit({ type: 'SBX:SYN' });
         resolve({ node: iframe, listen, emit });
       },
-      resizedCallback: ({ height, width }) => {
+      resizedCallback: ({ height, width, type }) => {
         emit({
-          type: 'ECHO',
+          type: 'SBX:ECHO',
           payload: {
-            type: 'resize',
-            payload: { height, width }
+            type: 'SBX:RESIZE',
+            payload: { height, width, type }
           }
         });
       }
@@ -58,6 +58,10 @@ export const sandboxContent = ({ iframe, head, body }) => {
     iframe.setAttribute('srcdoc', iframeContent);
   } else {
     // Provide fallback for legacy browsers
-    iframe.setAttribute('src', `data:text/html;charset=utf-8,${iframeContent}`);
+    try {
+      iframe.setAttribute('src', `data:text/html;charset=utf-8,${iframeContent}`);
+    } catch (e) {
+      warn(`cannot initialize component sandbox either due to browser, or Content Security Policy (CSP) compatibility issues`);
+    }
   }
 };

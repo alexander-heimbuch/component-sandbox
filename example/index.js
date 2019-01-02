@@ -17,8 +17,8 @@ listen('set-color', (color) => {
 </script>`;
 
 const handler = ({ listen, emit }) => {
-  listen('error', console.log);
-  listen('resize', console.log);
+  listen('SBX:ERROR', console.log);
+  listen('SBX:RESIZE', console.log);
 
   setInterval(() => {
     emit({ type: 'set-color', payload: '#' + ((Math.random() * 0xffffff) << 0).toString(16) });

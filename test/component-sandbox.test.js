@@ -109,7 +109,7 @@ describe('component-sandbox', () => {
     describe(`parent api`, () => {
       it(`requires an iframe that is appended to the DOM`, () => {
         sandbox.init();
-        expect(console.warn).to.have.been.calledWith('initialised iframe is required');
+        expect(console.warn).to.have.been.calledWith('component-sandbox: initialized iframe is required');
       });
 
       it(`returns the initialized sandbox node in a promise`, done => {
@@ -184,7 +184,7 @@ describe('component-sandbox', () => {
         sandbox.init(frame, '<div id="test-node"></div>').then(({ node, listen }) => {
           const testNode = getDocument(frame).getElementById('test-node');
 
-          listen('resize', () => {
+          listen('SBX:RESIZE', () => {
             testCount = testCount + 1;
 
             if (testCount === 1) {
@@ -367,10 +367,10 @@ describe('component-sandbox', () => {
   });
 
   describe('events', () => {
-    describe('error', () => {
+    describe('SBX:ERROR', () => {
       it('fires an error event in root scope', done => {
         sandbox.init(frame, `<script>throw new Error('my-custom-test-error')</script>`).then(({ listen }) => {
-          listen('error', ({ msg }) => {
+          listen('SBX:ERROR', ({ msg }) => {
             expect(msg).to.have.string('my-custom-test-error');
             done();
           });
@@ -388,7 +388,7 @@ describe('component-sandbox', () => {
         </script>`
           )
           .then(({ listen, emit }) => {
-            listen('error', ({ msg }) => {
+            listen('SBX:ERROR', ({ msg }) => {
               expect(msg).to.have.string('my-custom-test-error');
               done();
             });
@@ -398,11 +398,12 @@ describe('component-sandbox', () => {
       });
     });
 
-    describe('resize', () => {
+    describe('SBX:RESIZE', () => {
       it('fires a resize event on init', done => {
         sandbox.init(frame, '<div style="height: 100px;"></div>').then(({ listen }) => {
-          listen('resize', ({ height }) => {
+          listen('SBX:RESIZE', ({ height, type }) => {
             expect(height).to.equal('100');
+            expect(type).to.equal('init');
             done();
           });
         });
@@ -424,14 +425,16 @@ describe('component-sandbox', () => {
           .then(({ listen, emit }) => {
             let testCount = 0;
 
-            listen('resize', ({ height }) => {
+            listen('SBX:RESIZE', ({ height, type }) => {
               testCount = testCount + 1;
               if (testCount === 1) {
                 expect(height).to.equal('100');
+                expect(type).to.equal('init');
               }
 
               if (testCount === 2) {
                 expect(height).to.equal('500');
+                expect(type).to.equal('mutationObserver');
                 done();
               }
             });

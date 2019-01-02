@@ -101,12 +101,14 @@ Some default events for different use cases are available on the parent API:
 
 ### Frame Resizing
 
+This event is called after the iFrame resized. Passes in a message data object containing the `height`, `width` and the `type` of the event that triggered the iFrame to resize.
+
 ```javascript
-listen('resize', ({ width, height }) => {})
+listen('SBX:RESIZE', ({ width, height, type }) => {})
 ```
 
 ### Error Handling
 
 ```javascript
-listen('error', ({ msg, url, lineNo, columnNo, error }) => {})
+listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => {})
 ```

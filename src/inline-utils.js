@@ -11,3 +11,7 @@ export function safeParse(payload) {
     return {};
   }
 }
+
+export const warn = (message, ...optionalParams) => {
+  console.warn(`component-sandbox: ${message}`, ...optionalParams);
+};

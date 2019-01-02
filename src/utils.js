@@ -1,4 +1,6 @@
-import { safeParse } from './inline-utils';
+import { safeParse, warn } from './inline-utils';
+
+export { warn } from './inline-utils';
 
 export const setAttributes = (el, attrs = {}) => {
   Object.keys(attrs).forEach(property => {
@@ -35,7 +37,7 @@ export const guid = () => {
 
 export const sendMessage = (win, origin) => ({ type, payload, source }) => {
   if (!win) {
-    console.warn(`not initialized, can't send message`, { type, payload });
+    warn(`not initialized, can't send message`, { type, payload });
     return;
   }
 
@@ -45,7 +47,7 @@ export const sendMessage = (win, origin) => ({ type, payload, source }) => {
 
 export const createListener = (win, _origin) => (evt, cb, src) => {
   if (!win) {
-    console.warn(`not initialized, can't register listener for '${evt}'`);
+    warn(`not initialized, can't register listener for '${evt}'`);
     return;
   }
 
