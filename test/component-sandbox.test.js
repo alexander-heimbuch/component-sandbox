@@ -210,18 +210,96 @@ describe('component-sandbox', () => {
           frame,
           `
             <script>
-              listen('ping', function () {
-                emit({ type: 'pong', payload: 'some foo' })
-              })
+              listen('ping', payload => {
+                emit({ type: 'pong', payload });
+              });
             </script>
         `
         )
         .then(({ listen, emit }) => {
+          let counter = 0;
           listen('pong', payload => {
-            expect(payload).to.equal(payload);
+            counter++;
+            expect(payload).to.equal(`ping${counter}`);
+          });
+          listen('done', () => {
+            expect(counter).to.equal(2);
             done();
           });
+
+          emit({ type: 'ping', payload: 'ping1' });
+          emit({ type: 'ping', payload: 'ping2' });
+          emit({
+            type: 'SBX:ECHO',
+            payload: {
+              type: 'done'
+            }
+          });
+        });
+    });
+
+    it('provides deregistration handlers for event listeners on the host', done => {
+      sandbox
+        .init(
+          frame,
+          `
+            <script>
+              listen('ping', () => {
+                emit({ type: 'pong' });
+              });
+            </script>
+        `
+        )
+        .then(({ listen, emit }) => {
+          let counter = 0;
+          const deregFn = listen('pong', () => {
+            deregFn(); // First invocation triggers deregistration
+            counter++;
+          });
+
+          listen('done', () => {
+            expect(counter).to.equal(1);
+            done();
+          });
+
           emit({ type: 'ping' });
+          emit({ type: 'ping' });
+
+          emit({
+            type: 'SBX:ECHO',
+            payload: {
+              type: 'done'
+            }
+          });
+        });
+    });
+
+    it('provides deregistration handlers for event listeners inside the sandboxed contentWindow', done => {
+      sandbox
+        .init(
+          frame,
+          `
+            <script>
+              let counter = 0;
+              const deregFn = listen('ping', () => {
+                deregFn(); // First invocation triggers deregistration
+                counter++;
+              });
+              listen('done', () => {
+                emit({ type: 'done', payload: counter });
+              });
+            </script>
+        `
+        )
+        .then(({ listen, emit }) => {
+          listen('done', payload => {
+            expect(payload).to.equal(1);
+            done();
+          });
+
+          emit({ type: 'ping' });
+          emit({ type: 'ping' });
+          emit({ type: 'done' });
         });
     });
 

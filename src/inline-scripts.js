@@ -15,7 +15,7 @@ Object.defineProperty(window, 'listen', {
       return;
     }
 
-    window.addEventListener('message', ({ data, source: eventSource }) => {
+    const listener = ({ data, source: eventSource }) => {
       const { type, payload, source, origin } = safeParse(data);
       if (type !== evt) {
         return;
@@ -25,7 +25,12 @@ Object.defineProperty(window, 'listen', {
       if ((bypassOriginCheck || origin === ORIGIN) && (typeof src === 'undefined' || src === source)) {
         cb(payload, type === 'SBX:SYN' ? eventSource : source, origin);
       }
-    });
+    };
+
+    window.addEventListener('message', listener);
+
+    // Return deregister handler
+    return () => window.removeEventListener('message', listener);
   }
 });
 

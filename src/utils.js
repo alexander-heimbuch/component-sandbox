@@ -51,10 +51,15 @@ export const createListener = (win, _origin) => (evt, cb, src) => {
     return;
   }
 
-  win.addEventListener('message', ({ data }) => {
+  const listener = ({ data }) => {
     const { type, payload, source, origin } = safeParse(data);
     if (type === evt && origin === _origin && (typeof src === 'undefined' || src === source)) {
       cb(payload, source, origin);
     }
-  });
+  };
+
+  win.addEventListener('message', listener);
+
+  // Return deregister handler
+  return () => win.removeEventListener('message', listener);
 };
