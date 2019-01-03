@@ -109,10 +109,10 @@ describe('component-sandbox', () => {
     describe(`parent api`, () => {
       it(`requires an iframe that is appended to the DOM`, () => {
         sandbox.init();
-        expect(console.warn).to.have.been.calledWith('component-sandbox: initialized iframe is required');
+        expect(console.warn).to.have.been.calledWith('component-sandbox: initialised iframe is required');
       });
 
-      it(`returns the initialized sandbox node in a promise`, done => {
+      it(`returns the initialised sandbox node in a promise`, done => {
         sandbox.init(frame).then(({ node }) => {
           expect(node.tagName).to.equal('IFRAME');
           done();

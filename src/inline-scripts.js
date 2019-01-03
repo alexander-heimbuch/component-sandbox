@@ -1,36 +1,15 @@
-/* global safeParse, warn */
-let INITIALIZED = false;
+/* global safeParse, listeners */
+const LISTENERS = listeners();
 const EVENT_BUFFER = [];
-
-let HOST_WINDOW = window;
-let ORIGIN = null;
+let MESSAGE_PORT;
 
 Object.defineProperty(window, 'listen', {
   configurable: false,
   writable: false,
   enumerable: false,
   value: (evt, cb, src) => {
-    if (!window) {
-      warn(`not initialized, can't register listener for '${evt}'`);
-      return;
-    }
-
-    const listener = ({ data, source: eventSource }) => {
-      const { type, payload, source, origin } = safeParse(data);
-      if (type !== evt) {
-        return;
-      }
-
-      const bypassOriginCheck = type === 'SBX:SYN' || (type === 'SBX:ECHO' && !INITIALIZED);
-      if ((bypassOriginCheck || origin === ORIGIN) && (typeof src === 'undefined' || src === source)) {
-        cb(payload, type === 'SBX:SYN' ? eventSource : source, origin);
-      }
-    };
-
-    window.addEventListener('message', listener);
-
-    // Return deregister handler
-    return () => window.removeEventListener('message', listener);
+    // Register listener and return deregister handler
+    return LISTENERS.add(evt, cb, src);
   }
 });
 
@@ -39,18 +18,21 @@ Object.defineProperty(window, 'emit', {
   writable: false,
   enumerable: false,
   value: ({ type, payload, source }) => {
-    if (!window) {
-      warn(`not initialized, can't send message`, { type, payload });
-      return;
+    if (!MESSAGE_PORT) {
+      EVENT_BUFFER.push({ type, payload, source });
+    } else {
+      MESSAGE_PORT.postMessage(JSON.stringify({ type, payload, source }));
     }
+  }
+});
 
-    if (!INITIALIZED) {
-      EVENT_BUFFER.push({ type, payload });
-      return;
-    }
+window.addEventListener('message', ({ data, ports }) => {
+  const { type } = safeParse(data);
+  if (type === 'SBX:SYN' && !MESSAGE_PORT) {
+    MESSAGE_PORT = ports[0];
+    MESSAGE_PORT.onmessage = ({ data }) => LISTENERS.execute(data);
 
-    const message = JSON.stringify({ type, payload, source, origin: ORIGIN });
-    HOST_WINDOW.postMessage(message, '*');
+    EVENT_BUFFER.forEach(window.emit);
   }
 });
 
@@ -62,17 +44,6 @@ window.onerror = (msg, url, lineNo, columnNo, error) => {
 Object.defineProperty(window, 'onerror', {
   configurable: false,
   writable: false
-});
-
-window.listen('SBX:SYN', (payload, source, origin) => {
-  if (INITIALIZED) {
-    return;
-  }
-
-  HOST_WINDOW = source;
-  ORIGIN = origin;
-  INITIALIZED = true;
-  EVENT_BUFFER.forEach(window.emit);
 });
 
 window.listen('SBX:ECHO', ({ type, payload, source }) => {

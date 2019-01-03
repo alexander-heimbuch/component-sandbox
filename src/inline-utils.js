@@ -12,6 +12,30 @@ export function safeParse(payload) {
   }
 }
 
-export const warn = (message, ...optionalParams) => {
+export function warn(message, ...optionalParams) {
   console.warn(`component-sandbox: ${message}`, ...optionalParams);
-};
+}
+
+export function listeners() {
+  let listenerId = 0;
+  const listeners = {};
+
+  return {
+    execute: data => {
+      const { type, payload, source } = safeParse(data);
+      Object.values(listeners).forEach(({ evt, cb, src }) => {
+        if (type === evt && (typeof src === 'undefined' || src === source)) {
+          cb(payload, source);
+        }
+      });
+    },
+    add: (evt, cb, src) => {
+      const id = listenerId++;
+      listeners[id] = { evt, cb, src };
+
+      return () => {
+        delete listeners[id];
+      };
+    }
+  };
+}

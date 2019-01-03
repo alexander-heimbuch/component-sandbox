@@ -8,7 +8,7 @@ const frame = (attributes = defaultAttributes, styles = defaultStyles) => create
 const init = (iframe, content = '', { baseUrl } = {}) =>
   new Promise(resolve => {
     if (!iframe || !iframe.contentWindow) {
-      warn(`initialized iframe is required`);
+      warn(`initialised iframe is required`);
       return;
     }
 
