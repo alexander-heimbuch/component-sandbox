@@ -26,15 +26,19 @@ Object.defineProperty(window, 'emit', {
   }
 });
 
-window.addEventListener('message', ({ data, ports }) => {
-  const { type } = safeParse(data);
-  if (type === 'SBX:SYN' && !MESSAGE_PORT) {
-    MESSAGE_PORT = ports[0];
-    MESSAGE_PORT.onmessage = ({ data }) => LISTENERS.execute(data);
+window.addEventListener(
+  'message',
+  ({ data, ports }) => {
+    const { type } = safeParse(data);
+    if (type === 'SBX:SYN' && !MESSAGE_PORT) {
+      MESSAGE_PORT = ports[0];
+      MESSAGE_PORT.onmessage = ({ data }) => LISTENERS.execute(data);
 
-    EVENT_BUFFER.forEach(window.emit);
-  }
-});
+      EVENT_BUFFER.forEach(window.emit);
+    }
+  },
+  false
+);
 
 window.onerror = (msg, url, lineNo, columnNo, error) => {
   window.emit({ type: 'SBX:ERROR', payload: { msg, url, lineNo, columnNo, error } });

@@ -8,6 +8,15 @@ function allowSameOrigin(iframe) {
   iframe.setAttribute('sandbox', sandboxRestrictions.join(' ').trim());
 }
 
+function disallowScripts(iframe) {
+  const sandboxAttr = iframe.getAttribute('sandbox') || '';
+  const sandboxRestrictions = sandboxAttr
+    .trim()
+    .split(' ')
+    .filter(restriction => restriction !== 'allow-scripts');
+  iframe.setAttribute('sandbox', sandboxRestrictions.join(' ').trim());
+}
+
 function getDocument(iframe) {
   return iframe.contentWindow.document;
 }
@@ -81,6 +90,7 @@ describe('component-sandbox', () => {
         allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           expect(getDocument(node).doctype.name).to.equal('html');
+          expect(node).to.equal(frame);
           done();
         });
       });
@@ -89,8 +99,8 @@ describe('component-sandbox', () => {
         allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           const result = getDocument(node).querySelectorAll('meta[charset="utf-8"]');
-
           expect(result.length).to.equal(1);
+          expect(node).to.equal(frame);
           done();
         });
       });
@@ -99,17 +109,56 @@ describe('component-sandbox', () => {
         allowSameOrigin(frame);
         sandbox.init(frame).then(({ node }) => {
           const style = getDocument(node).querySelectorAll('style');
-
           expect(style.length).to.equal(1);
+          expect(node).to.equal(frame);
+          done();
+        });
+      });
+
+      it(`applies the 'allow-scripts' sandbox restriction lift`, done => {
+        allowSameOrigin(frame);
+        disallowScripts(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(node).not.to.equal(frame);
+          expect(node.getAttribute('sandbox')).to.contain('allow-scripts');
+          done();
+        });
+      });
+
+      it(`applies the 'allow-same-origin' sandbox restriction lift`, done => {
+        // Mimic an IE 10
+        const hasDocumentMode = 'documentMode' in document;
+        const documentMode = document.documentMode;
+        document.documentMode = 10;
+
+        sandbox.init(frame).then(({ node }) => {
+          hasDocumentMode ? (document.documentMode = documentMode) : delete document.documentMode;
+
+          expect(node).not.to.equal(frame);
+          expect(node.getAttribute('sandbox')).to.contain('allow-same-origin');
           done();
         });
       });
     });
 
     describe(`parent api`, () => {
-      it(`requires an iframe that is appended to the DOM`, () => {
+      it(`requires an iframe passed as first argument`, () => {
         sandbox.init();
         expect(console.warn).to.have.been.calledWith('component-sandbox: initialised iframe is required');
+      });
+
+      it(`requires an iframe that is appended to the DOM`, () => {
+        sandbox.init(document.createElement('iframe'));
+        expect(console.warn).to.have.been.calledWith('component-sandbox: initialised iframe is required');
+      });
+
+      it(`requires an iframe that has a 'sandbox' attribute set`, () => {
+        const iframe = document.createElement('iframe');
+        testbed.appendChild(iframe);
+
+        sandbox.init(iframe);
+        expect(console.warn).to.have.been.calledWith(`component-sandbox: attribute 'sandbox' needs to be present at given IFrame element`);
       });
 
       it(`returns the initialised sandbox node in a promise`, done => {

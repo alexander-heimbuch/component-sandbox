@@ -3,7 +3,7 @@ import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { listeners, warn } from './utils';
+import { listeners } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
@@ -55,6 +55,29 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
   );
 };
 
+export const sandboxContentFallback = (iframe, html, rand) => {
+  const scriptContent = `<script>
+function messageHandler(event) {
+  var data = event.data;
+  var token = '${rand}::';
+  if (typeof data === 'string' && data.indexOf(token) === 0) {
+    window.removeEventListener('message', messageHandler, false);
+    document.write(data.substr(token.length));
+    document.close();
+  }
+}
+
+window.addEventListener('message', messageHandler, false);
+</script>`;
+
+  const iFrameLoadHandler = () => {
+    iframe.removeEventListener('load', iFrameLoadHandler);
+    iframe.contentWindow.postMessage(`${rand}::${html}`, '*');
+  };
+  iframe.addEventListener('load', iFrameLoadHandler);
+  iframe.setAttribute('src', `data:text/html;charset=utf-8,${scriptContent}`);
+};
+
 export const sandboxContent = ({ iframe, head, body }) => {
   const iframeContent = `<!DOCTYPE html>
 <html lang="en">
@@ -66,11 +89,18 @@ export const sandboxContent = ({ iframe, head, body }) => {
     // Use `srcdoc` attribute in modern browsers
     iframe.setAttribute('srcdoc', iframeContent);
   } else {
-    // Provide fallback for legacy browsers
+    // Fallback for legacy browsers
     try {
-      iframe.setAttribute('src', `data:text/html;charset=utf-8,${iframeContent}`);
+      // First try if there is direct access to the IFrame's `contentDocument`
+      const doc = iframe.contentDocument;
+      doc.open();
+      doc.write(iframeContent);
+      doc.close();
     } catch (e) {
-      warn(`cannot initialise component sandbox due to browser or Content Security Policy (CSP) compatibility issues`);
+      // Most-likely issues due to existing `sandbox` attribute, or Content Security Policy (CSP) incompatibility
+      // Provide last resort fallback using the `Window.postMessage()` API
+      const rand = Math.random() * 1000;
+      sandboxContentFallback(iframe, iframeContent, rand);
     }
   }
 };

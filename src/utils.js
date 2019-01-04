@@ -1,4 +1,8 @@
-export { listeners, warn } from './inline-utils';
+export { listeners } from './inline-utils';
+
+export function warn(message, ...optionalParams) {
+  console.warn(`component-sandbox: ${message}`, ...optionalParams);
+}
 
 export const setAttributes = (el, attrs = {}) => {
   Object.keys(attrs).forEach(property => {

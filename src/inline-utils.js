@@ -12,10 +12,6 @@ export function safeParse(payload) {
   }
 }
 
-export function warn(message, ...optionalParams) {
-  console.warn(`component-sandbox: ${message}`, ...optionalParams);
-}
-
 export function listeners() {
   let listenerId = 0;
   const listeners = {};
@@ -23,7 +19,9 @@ export function listeners() {
   return {
     execute: data => {
       const { type, payload, source } = safeParse(data);
-      Object.values(listeners).forEach(({ evt, cb, src }) => {
+      const keys = Object.keys(listeners); // Prevent use of `Object.values` here to shim-free keep support for IE11
+      keys.forEach(key => {
+        const { evt, cb, src } = listeners[key];
         if (type === evt && (typeof src === 'undefined' || src === source)) {
           cb(payload, source);
         }

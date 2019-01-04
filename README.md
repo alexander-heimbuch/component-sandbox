@@ -4,9 +4,24 @@ JavaScript Component Sandbox based on [iFrameResizer](https://github.com/davidjb
 
 The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [iFrameResizer](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the IFrame whenever a mutation of the sandboxed contents is detected.
 
+## Browser Compatibility
+
+The `component-sandbox` has been tested with:
+
+* **IE:** 10 and 11 (older versions won't work due to the internal use of the [Channel Messaging API](https://developer.mozilla.org/en-US/docs/Web/API/Channel_Messaging_API))
+* **Edge:** 13 - 18
+* **Chrome:** 26 - 71
+* **Firefox:** 41 - 64
+* **Safari:** 8 - 12
+* **Opera:** 56 and 57
+
+This given browser matrix doesn't mean that the code isn't compatible with earlier browser versions, it just means that we weren't able to test it in earlier versions so far.
+
 ## Security
 
-Every sandboxed IFrame mandatorily gets initialised with the [`sandbox` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox) in place. Also the availability of the `allow-scripts` restriction is required and enforced. Besides that you are free to lift all other sandbox restrictions if required for your use case, including the `allow-same-origin` restriction.
+Every sandboxed IFrame mandatorily gets initialised with the [`sandbox` attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/iframe#attr-sandbox) in place. Also the availability of the `allow-scripts` restriction lift is required and enforced. Besides that you are free to lift all other sandbox restrictions if required for your use case, including the `allow-same-origin` restriction.
+
+**Exception:** As usual Internet Explorer 10 and 11 require some special treatment as unfortunately cross-domain communication is [broken in IE](https://caniuse.com/#feat=x-doc-messaging) since the very beginning and got fixed in Edge only. For us this means that for these legacy browsers we need to weaken the sandbox by lifting the `allow-same-domain` restriction mandatorily. This is the bullet we have to bite in order to get the inter-frame communication to run in these browsers.
 
 ## Inter-Frame Communication
 
@@ -38,7 +53,7 @@ import sandbox from 'component-sandbox';
 // helper with base attributes for IFrame, you can also create an IFrame node by yourself
 const frame = sandbox.frame();
 
-document.body.appendChild(frame)
+document.body.appendChild(frame);
 ```
 
 3. Initialise the sandbox
@@ -59,6 +74,14 @@ sandbox.init(frame, `<script>
 })
 ```
 
+**Note**
+
+The `init` method returns an [`HTMLIFrameElement`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLIFrameElement). Usually this element is the original IFrame element that got passed to the method as the first argument. But under certain circumstances a clone of the original IFrame element is returned that was used internally to replace the existing (already attached) IFrame element. The reason for this behavior are several sanity checks inside the `init` method that are required to ensure the availability of the `sandbox` attribute and the compatibility with legacy browsers (like IE 10 and 11). Once the original IFrame is attached to the DOM, changes to the `sandbox` attribute aren't reflected anymore, so we need to replace the original IFrame with a slightly modified clone in order to make the whole `component-sandbox` work.
+
+**TL;DR**
+
+In order to prevent subtle issues that in the worst case only occur in certain legacy browsers, the safest way is to always store and use the `HTMLIFrameElement` that gets passed as `node` property once the `init` method's returned promise gets resolved.
+ 
 ## API
 
 ### Frame Creation
