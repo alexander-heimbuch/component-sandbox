@@ -18,7 +18,7 @@ function disallowScripts(iframe) {
 }
 
 function getDocument(iframe) {
-  return iframe.contentWindow.document;
+  return iframe.contentDocument;
 }
 
 describe('component-sandbox', () => {

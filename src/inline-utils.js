@@ -12,28 +12,18 @@ export function safeParse(payload) {
   }
 }
 
-export function listeners() {
-  let listenerId = 0;
-  const listeners = {};
-
-  return {
-    execute: data => {
+export function createMessageEventListener(port) {
+  return (evt, cb, src) => {
+    const listener = ({ data }) => {
       const { type, payload, source } = safeParse(data);
-      const keys = Object.keys(listeners); // Prevent use of `Object.values` here to shim-free keep support for IE11
-      keys.forEach(key => {
-        const { evt, cb, src } = listeners[key];
-        if (type === evt && (typeof src === 'undefined' || src === source)) {
-          cb(payload, source);
-        }
-      });
-    },
-    add: (evt, cb, src) => {
-      const id = listenerId++;
-      listeners[id] = { evt, cb, src };
+      if (type === evt && (typeof src === 'undefined' || src === source)) {
+        cb(payload, source);
+      }
+    };
 
-      return () => {
-        delete listeners[id];
-      };
-    }
+    port.addEventListener('message', listener, false);
+
+    // Return deregister handler
+    return () => port.removeEventListener('message', listener, false);
   };
 }

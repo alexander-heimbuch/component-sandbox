@@ -3,7 +3,7 @@ import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { listeners } from './utils';
+import { createMessageEventListener } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
@@ -21,13 +21,8 @@ export const iframeApi = () => `<script>var exports = {}; </script>
 
 export const registerIframeResizer = ({ iframe, resolve }) => {
   const channel = new MessageChannel();
-  const l = listeners();
-  channel.port1.onmessage = ({ data }) => l.execute(data);
+  channel.port1.start();
 
-  const listen = (evt, cb, src) => {
-    // Register listener and return deregister handler
-    return l.add(evt, cb, src);
-  };
   const emit = ({ type, payload, source }) => {
     channel.port1.postMessage(JSON.stringify({ type, payload, source }));
   };
@@ -37,6 +32,7 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
       checkOrigin: false,
       log: false,
       initCallback: () => {
+        const listen = createMessageEventListener(channel.port1);
         const data = { type: 'SBX:SYN' };
         iframe.contentWindow.postMessage(JSON.stringify(data), '*', [channel.port2]);
         resolve({ node: iframe, listen, emit });
