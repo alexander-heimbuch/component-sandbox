@@ -101,7 +101,7 @@ sandbox.create(attributes?, styles?)
 ```javascript
 /**
  * iframe:   Node => IFrame node that is already appended to the document
- * content:  String => HTML markup injected into the sandbox body
+ * content:  string => HTML markup injected into the sandbox body
  * options:  Object => { baseUrl: '.' } custom meta attributes for the sandbox
  * returns Promise<{node, listen, emit}>
  */
@@ -113,11 +113,11 @@ sandbox.init(iframe, content?, options?).then(({ node, listen, emit }) => {})
 To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. Inside the sandbox the `emit` and `listen` methods are available on the global scope.
 
 ```javascript
-emit({ type: String, payload: any, source?: any})
+emit({ type: string, payload: any, source?: any})
 ```
 
 ```javascript
-listen(type: String, callback: (payload: any, source?: any) => void , source?: any)
+listen(type: string, callback: (payload: any, source?: any) => void , source?: any)
 ```
 
 ## Default Events
