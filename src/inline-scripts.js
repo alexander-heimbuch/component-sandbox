@@ -1,4 +1,4 @@
-/* global createMessageEventListener, safeParse */
+/* global createMessageEventListener, safeParse, toMessage */
 (() => {
   let LISTENER_ID = 0;
   let LISTENER_BUFFER = {};
@@ -36,41 +36,42 @@
     configurable: false,
     writable: false,
     enumerable: false,
-    value: ({ type, payload, source }) => {
+    value: obj => {
       if (!MESSAGE_PORT) {
-        EVENT_BUFFER.push({ type, payload, source });
+        EVENT_BUFFER.push(obj);
       } else {
-        MESSAGE_PORT.postMessage(JSON.stringify({ type, payload, source }));
+        const { message, transfer } = toMessage(obj);
+        MESSAGE_PORT.postMessage(message, transfer);
       }
     }
   });
 
-  window.addEventListener(
-    'message',
-    ({ data, ports }) => {
-      const { type } = safeParse(data);
-      if (type === 'SBX:SYN' && !MESSAGE_PORT) {
-        MESSAGE_PORT = ports[0];
-        MESSAGE_EVENT_LISTENER = createMessageEventListener(MESSAGE_PORT);
-        MESSAGE_PORT.start();
+  function syncEventListener({ data, ports }) {
+    const { type } = safeParse(data);
+    if (type === 'SBX:SYN' && !MESSAGE_PORT && Array.isArray(ports) && ports[0]) {
+      window.removeEventListener('message', syncEventListener, false);
 
-        // Flush listener buffer
-        const keys = Object.keys(LISTENER_BUFFER); // Prevent use of `Object.values` here to shim-free keep support for IE11
-        keys.forEach(key => {
-          const { evt, cb, src } = LISTENER_BUFFER[key];
-          LISTENER_DEREGS[key] = MESSAGE_EVENT_LISTENER(evt, cb, src);
-        });
+      MESSAGE_PORT = ports[0];
+      MESSAGE_EVENT_LISTENER = createMessageEventListener(MESSAGE_PORT);
+      MESSAGE_PORT.start();
 
-        // Flush event buffer
-        EVENT_BUFFER.forEach(window.emit);
+      // Flush listener buffer
+      const keys = Object.keys(LISTENER_BUFFER); // Prevent use of `Object.values` here to shim-free keep support for IE11
+      keys.forEach(key => {
+        const { evt, cb, src } = LISTENER_BUFFER[key];
+        LISTENER_DEREGS[key] = MESSAGE_EVENT_LISTENER(evt, cb, src);
+      });
 
-        // Remove buffers
-        LISTENER_BUFFER = null;
-        EVENT_BUFFER = null;
-      }
-    },
-    false
-  );
+      // Flush event buffer
+      EVENT_BUFFER.forEach(window.emit);
+
+      // Remove buffers
+      LISTENER_BUFFER = null;
+      EVENT_BUFFER = null;
+    }
+  }
+
+  window.addEventListener('message', syncEventListener, false);
 
   window.onerror = (msg, url, lineNo, columnNo, error) => {
     window.emit({ type: 'SBX:ERROR', payload: { msg, url, lineNo, columnNo, error } });
@@ -82,8 +83,8 @@
     writable: false
   });
 
-  window.listen('SBX:ECHO', ({ type, payload, source }) => {
-    window.emit({ type, payload, source });
+  window.listen('SBX:ECHO', ({ type, payload, source, transfer }) => {
+    window.emit({ type, payload, source, transfer });
   });
 
   // Remove security relevant properties from the sandboxed `window` object

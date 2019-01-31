@@ -3,7 +3,7 @@ import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
 
-import { createMessageEventListener } from './utils';
+import { createMessageEventListener, toMessage } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
@@ -23,8 +23,9 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
   const channel = new MessageChannel();
   channel.port1.start();
 
-  const emit = ({ type, payload, source }) => {
-    channel.port1.postMessage(JSON.stringify({ type, payload, source }));
+  const emit = obj => {
+    const { message, transfer } = toMessage(obj);
+    channel.port1.postMessage(message, transfer);
   };
 
   iframeResizer(
