@@ -1,12 +1,17 @@
 export const defaultAttributes = {
   'min-width': '100%',
-  seamless: '',
   scrolling: 'no',
   frameborder: '0',
   sandbox: 'allow-scripts'
 };
 
-export const defaultStyles = {};
+export const defaultStyles = {
+  backgroundColor: 'transparent',
+  border: '0px none transparent',
+  padding: '0px',
+  margin: '0px',
+  overflow: 'hidden'
+};
 
 export const defaultErrorHandler = console.warn;
 export const defaultResizeHandler = () => void 0;

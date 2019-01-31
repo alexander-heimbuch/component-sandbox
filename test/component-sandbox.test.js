@@ -1,6 +1,7 @@
 /* global sinon describe it expect beforeEach afterEach */
 import sandbox from 'component-sandbox';
 import { createMessageEventListener } from '../src/utils';
+import { defaultAttributes, defaultStyles } from '../src/defaults';
 
 function allowSameOrigin(iframe) {
   const sandboxAttr = iframe.getAttribute('sandbox') || '';
@@ -56,15 +57,8 @@ describe('component-sandbox', () => {
     });
 
     describe('attributes', () => {
-      const defaultAttributes = {
-        'min-width': '100%',
-        seamless: '',
-        scrolling: 'no',
-        frameborder: '0'
-      };
-
       Object.keys(defaultAttributes).forEach(attribute => {
-        it(`should add default attribute ${attribute}`, () => {
+        it(`should add default attribute '${attribute}'`, () => {
           expect(sandbox.frame().getAttribute(attribute)).to.equal(defaultAttributes[attribute]);
         });
       });
@@ -75,8 +69,10 @@ describe('component-sandbox', () => {
     });
 
     describe('styles', () => {
-      it(`shouldn't add styles by default`, () => {
-        expect(sandbox.frame().style.width).to.equal('');
+      Object.keys(defaultStyles).forEach(key => {
+        it(`should add default style '${key}'`, () => {
+          expect(sandbox.frame().style[key]).to.equal(defaultStyles[key]);
+        });
       });
 
       it(`should add custom styles`, () => {
