@@ -27,6 +27,10 @@ Every sandboxed IFrame mandatorily gets initialised with the [`sandbox` attribut
 
 The `component-sandbox` establishes a simple pub/sub communication channel between the host and the sandbox via globally available `listen` and `emit` functions. The [Channel Messaging API](https://developer.mozilla.org/en-US/docs/Web/API/Channel_Messaging_API) is used under the hood to directly communicate between the host window and the sandboxed IFrame's `contentWindow`. As described [here](https://developer.mozilla.org/en-US/docs/Web/API/Channel_Messaging_API/Using_channel_messaging), the [`Window.postMessage()` API](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) is utilized to establish the direct connection.
 
+## Inter-Sandbox Communication
+
+It's possible to define one or more [`Transferable`](https://developer.mozilla.org/en-US/docs/Web/API/Transferable) objects that can be passed via the `emit` and extracted by the `listen` method. Utilizing this feature paves the way for any kind of mediators/services to establish direct connections between several sandboxes.
+
 ## Installation
 
 ```bash
@@ -68,6 +72,7 @@ sandbox.init(frame, `<script>
 </script>`).then(({ emit, listen, node }) => {
   listen('pong', (payload) => {
     console.log('pong', payload);
+    console.log('node', node);
   });
 
   emit({ type: 'ping', payload: { inner: 'payload' } });
@@ -113,11 +118,21 @@ sandbox.init(iframe, content?, options?).then(({ node, listen, emit }) => {})
 To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. Inside the sandbox the `emit` and `listen` methods are available on the global scope.
 
 ```javascript
-emit({ type: string, payload: any, source?: any})
+emit({ type: string, payload: any, source?: any, transfer?: Transferable | Transferable[]})
 ```
 
 ```javascript
-listen(type: string, callback: (payload: any, source?: any) => void , source?: any)
+listen(
+  type: string,
+  callback: (
+    payload: any,
+    {
+      source?: any,
+      transfer?: Transferable[]
+    }
+  ) => void,
+  source?: any
+)
 ```
 
 ## Default Events

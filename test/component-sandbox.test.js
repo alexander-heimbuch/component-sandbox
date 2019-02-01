@@ -1,5 +1,7 @@
 /* global sinon describe it expect beforeEach afterEach */
 import sandbox from 'component-sandbox';
+import { createMessageEventListener } from '../src/utils';
+import { defaultAttributes, defaultStyles } from '../src/defaults';
 
 function allowSameOrigin(iframe) {
   const sandboxAttr = iframe.getAttribute('sandbox') || '';
@@ -55,15 +57,8 @@ describe('component-sandbox', () => {
     });
 
     describe('attributes', () => {
-      const defaultAttributes = {
-        'min-width': '100%',
-        seamless: '',
-        scrolling: 'no',
-        frameborder: '0'
-      };
-
       Object.keys(defaultAttributes).forEach(attribute => {
-        it(`should add default attribute ${attribute}`, () => {
+        it(`should add default attribute '${attribute}'`, () => {
           expect(sandbox.frame().getAttribute(attribute)).to.equal(defaultAttributes[attribute]);
         });
       });
@@ -74,8 +69,10 @@ describe('component-sandbox', () => {
     });
 
     describe('styles', () => {
-      it(`shouldn't add styles by default`, () => {
-        expect(sandbox.frame().style.width).to.equal('');
+      Object.keys(defaultStyles).forEach(key => {
+        it(`should add default style '${key}'`, () => {
+          expect(sandbox.frame().style[key]).to.equal(defaultStyles[key]);
+        });
       });
 
       it(`should add custom styles`, () => {
@@ -287,6 +284,60 @@ describe('component-sandbox', () => {
         });
     });
 
+    it('can pass Transferable objects through the communication channel', done => {
+      sandbox
+        .init(
+          frame,
+          `
+            <script>
+              listen('ping', (payload, { source, transfer }) => {
+                if (payload === 'ping1') {
+                  transfer[0].postMessage({ type: 'pong', payload });
+                } else {
+                  emit({ type: 'pong', payload, transfer });
+                }
+              });
+            </script>
+        `
+        )
+        .then(({ listen, emit }) => {
+          const channel = new MessageChannel();
+          channel.port1.start();
+          channel.port2.start();
+
+          const listenChannel = createMessageEventListener(channel.port1);
+          const transferData = { foo: 'foo', sub: { bar: 'bar' }, num: 666 };
+          const uint8Array = new TextEncoder().encode(JSON.stringify(transferData));
+
+          listenChannel('pong', payload => {
+            expect(payload).to.equal(`ping1`);
+            emit({ type: 'ping', payload: 'ping2', transfer: [uint8Array.buffer] });
+          });
+
+          listen('pong', (payload, { transfer }) => {
+            expect(payload).to.equal(`ping2`);
+            expect(transfer).to.be.an('array');
+            expect(transfer).to.have.lengthOf(1);
+
+            const data = new TextDecoder('utf-8').decode(transfer[0]);
+            expect(data).to.equal(JSON.stringify(transferData));
+
+            emit({
+              type: 'SBX:ECHO',
+              payload: {
+                type: 'done'
+              }
+            });
+          });
+
+          listen('done', () => {
+            done();
+          });
+
+          emit({ type: 'ping', payload: 'ping1', transfer: [channel.port2] });
+        });
+    });
+
     it('provides deregistration handlers for event listeners on the host', done => {
       sandbox
         .init(
@@ -358,9 +409,9 @@ describe('component-sandbox', () => {
           frame,
           `
         <script>
-          listen('ping', function (payload) {
+          listen('ping', (payload) => {
             emit({ type: 'pong', payload: payload })
-          })
+          });
         </script>
       `
         )
@@ -382,12 +433,12 @@ describe('component-sandbox', () => {
           frame,
           `
         <script>
-          listen('ping', function (payload, source) {
+          listen('ping', (payload, { source }) => {
             emit({ type: 'pong', payload: payload + 10, source: source })
-          }, 'foo')
-          listen('ping', function (payload, source) {
+          }, 'foo');
+          listen('ping', (payload, { source }) => {
             emit({ type: 'pong', payload: payload + 100, source: source })
-          }, 'bar')
+          }, 'bar');
         </script>
       `
         )
@@ -423,10 +474,10 @@ describe('component-sandbox', () => {
             frame,
             `
         <script>
-          listen('ping', function (payload) {
+          listen('ping', (payload) => {
             emit({ type: 'pong', payload: payload + 10 })
           });
-          listen('from2', function () {
+          listen('from2', () => {
             throw new Error('unexpected');
           });
         </script>
@@ -449,10 +500,10 @@ describe('component-sandbox', () => {
             frame2,
             `
         <script>
-          listen('ping', function (payload) {
+          listen('ping', (payload) => {
             emit({ type: 'pong', payload: payload + 100 })
           });
-          listen('from1', function () {
+          listen('from1', () => {
             throw new Error('unexpected');
           });
         </script>
