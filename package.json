@@ -3,10 +3,11 @@
   "version": "0.9.0",
   "description": "",
   "main": "index.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "cleanup": "rm -rf dist/",
-    "build": "npm run cleanup && webpack --config build/webpack.config.js && node build/prepare.js && cp -R src dist/src",
+    "build": "npm run cleanup && webpack --config build/webpack.config.js && node build/prepare.js && cp -R src dist/src && cp README.md dist",
     "dev": "webpack-dev-server --progress --config build/webpack.config.dev.js",
     "test:dev": "node test && NODE_ENV=development webpack-dev-server --progress --config ./test/webpack.config.js",
     "prettify": "prettier --write '{src,test,example}/**/*.js'",
@@ -22,6 +23,9 @@
     "resize"
   ],
   "author": "Alexander Heimbuch <npm@heimbu.ch>",
+  "contributors": [
+    "Steffen Eckardt <mosh666@gmail.com>"
+  ],
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/alexander-heimbuch/component-sandbox/issues"
