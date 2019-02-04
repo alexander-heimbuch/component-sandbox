@@ -144,11 +144,19 @@ Some default events for different use cases are available on the parent API:
 This event is called after the IFrame resized. Passes in a message data object containing the `height`, `width` and the `type` of the event that triggered the IFrame to resize.
 
 ```javascript
-listen('SBX:RESIZE', ({ width, height, type }) => {})
+listen('SBX:RESIZE', ({ width, height, type }) => { ... })
+```
+
+### Frame Focus
+
+This event is called when the IFrame's `documentElement` received focus. The event exists for convenience reasons to enable implementors to enhance and align their user experience and accessibility across different browsers. IE and Firefox for instance provide extra tab stops for IFrames, while Chrome and Safari do not. These extra tab stops break the user's expected tab order though. Utilizing the `SBX:FOCUS` event enables implementors to listen to these extra tab stops and instead delegate the focus immediately to a certain focusable element inside the IFrame.
+
+```javascript
+listen('SBX:FOCUS', () => { ... })
 ```
 
 ### Error Handling
 
 ```javascript
-listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => {})
+listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => { ... })
 ```

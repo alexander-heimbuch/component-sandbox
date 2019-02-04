@@ -71,7 +71,17 @@
     }
   }
 
+  function focusEventListener() {
+    setTimeout(() => {
+      if (document.activeElement === document.documentElement) {
+        window.emit({ type: 'SBX:FOCUS' });
+      }
+    });
+  }
+
   window.addEventListener('message', syncEventListener, false);
+
+  window.addEventListener('focus', focusEventListener, false);
 
   window.onerror = (msg, url, lineNo, columnNo, error) => {
     window.emit({ type: 'SBX:ERROR', payload: { msg, url, lineNo, columnNo, error } });
