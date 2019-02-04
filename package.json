@@ -32,7 +32,7 @@
   },
   "homepage": "https://github.com/alexander-heimbuch/component-sandbox#readme",
   "dependencies": {
-    "iframe-resizer": "^3.6.4"
+    "iframe-resizer": "3.6.5"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.3",

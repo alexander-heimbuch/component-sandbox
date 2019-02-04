@@ -126,7 +126,7 @@ listen(
   type: string,
   callback: (
     payload: any,
-    {
+    context?: {
       source?: any,
       transfer?: Transferable[]
     }
