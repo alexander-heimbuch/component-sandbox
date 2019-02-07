@@ -64,15 +64,18 @@ document.body.appendChild(frame);
 
 ```javascript
 // Any valid html markup can be used, content is injected into the IFrame body
-sandbox.init(frame, `<script>
+sandbox
+  .init(frame, `
+<script>
   listen('ping', function (payload) {
     console.log('ping', payload);
     emit({ type: 'pong', payload: { outer: 'payload' } });
   });
-</script>`).then(({ emit, listen, node }) => {
-  listen('pong', (payload) => {
-    console.log('pong', payload);
-    console.log('node', node);
+</script>`)
+  .then(({ emit, listen, node }) => {
+    listen('pong', (payload) => {
+      console.log('pong', payload);
+      console.log('node', node);
   });
 
   emit({ type: 'ping', payload: { inner: 'payload' } });
@@ -93,24 +96,26 @@ In order to prevent subtle issues that in the worst case only occur in certain l
 
 ```javascript
 /**
- * attributes:  Object => List of attributes to be added to the IFrame
- * styles:      Object => List of inline styles to be added to the IFrame
+ * attributes: Object => List of attributes to be added to the IFrame
+ * styles:     Object => List of inline styles to be added to the IFrame
  * 
  * returns IFrame node
  */
-sandbox.create(attributes?, styles?)
+sandbox.create(attributes?, styles?);
 ```
 
 ### Sandbox initialization
 
 ```javascript
 /**
- * iframe:   Node => IFrame node that is already appended to the document
- * content:  string => HTML markup injected into the sandbox body
- * options:  Object => { baseUrl: '.' } custom meta attributes for the sandbox
- * returns Promise<{node, listen, emit}>
+ * iframe:  Node => IFrame node that is already appended to the document
+ * content: string => HTML markup injected into the sandbox body
+ * options: Object => { baseUrl: '.' } custom meta attributes for the sandbox
+ * returns Promise<{ node, listen, emit }>
  */
-sandbox.init(iframe, content?, options?).then(({ node, listen, emit }) => {})
+sandbox
+  .init(iframe, content?, options?)
+  .then(({ node, listen, emit }) => {});
 ```
 
 ### Messaging
@@ -118,7 +123,12 @@ sandbox.init(iframe, content?, options?).then(({ node, listen, emit }) => {})
 To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. Inside the sandbox the `emit` and `listen` methods are available on the global scope.
 
 ```javascript
-emit({ type: string, payload: any, source?: any, transfer?: Transferable | Transferable[]})
+emit({
+  type: string,
+  payload: any,
+  source?: any,
+  transfer?: Transferable | Transferable[]
+});
 ```
 
 ```javascript
@@ -132,7 +142,7 @@ listen(
     }
   ) => void,
   source?: any
-)
+);
 ```
 
 ## Default Events
@@ -144,19 +154,54 @@ Some default events for different use cases are available on the parent API:
 This event is called after the IFrame resized. Passes in a message data object containing the `height`, `width` and the `type` of the event that triggered the IFrame to resize.
 
 ```javascript
-listen('SBX:RESIZE', ({ width, height, type }) => { ... })
+/**
+ * width:  number => The new width of the IFrame
+ * height: number => The new height of the IFrame
+ * type:   string => The type of event that triggered the IFrame to resize
+ */
+listen('SBX:RESIZE', ({ width, height, type }) => { ... });
 ```
 
 ### Frame Focus
 
-This event is called when the IFrame's `documentElement` received focus. The event exists for convenience reasons to enable implementors to enhance and align their user experience and accessibility across different browsers. IE and Firefox for instance provide extra tab stops for IFrames, while Chrome and Safari do not. These extra tab stops break the user's expected tab order though. Utilizing the `SBX:FOCUS` event enables implementors to listen to these extra tab stops and instead delegate the focus immediately to a certain focusable element inside the IFrame.
+The two focus-related events `SBX:FOCUS` and `SBX:BLUR` are called whenever the IFrame either received or lost focus. These events mainly exist for convenience reasons to enable implementors to enhance and align their user experience and accessibility across different browsers. IE and Firefox for instance provide extra tab stops for IFrames, while Chrome and Safari do not. These extra tab stops break the user's expected tab order though.
+
+##### `SBX:FOCUS`
+
+Utilizing the `SBX:FOCUS` event enables implementors to listen to these extra tab stops and instead delegate the focus immediately to a certain focusable element inside the IFrame.
+
+In order to be able to distinguish between a *normal* focus event and one that *most-likely* marks such an extra tab stop, the payload contains a boolean property `isDocumentElement` which is set to `true` if the currently focused element is the IFrame's `documentElement`.
 
 ```javascript
-listen('SBX:FOCUS', () => { ... })
+/**
+ * isDocumentElement: boolean => Whether the currently focused element is the IFrame's documentElement
+ */
+listen('SBX:FOCUS', ({ isDocumentElement }) => { ... });
+```
+
+##### `SBX:BLUR`
+
+This event is the counterpart of the `SBX:FOCUS` event. It can be used to explicitly get notified when an IFrame loses its focus.
+
+```javascript
+listen('SBX:BLUR', () => { ... });
 ```
 
 ### Error Handling
 
+The `SBX:ERROR` event essentially passes on the error information as they are caught by a [`window.onerror`](https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror) handler that gets registered on the IFrame's `contentWindow`.
+
+By default the `component-sandbox` creates or prepares an IFrame element in a way that it behaves like a cross-origin IFrame, as the default `sandbox` attribute that gets applied to the IFrame element lacks the `allow-same-origin` restriction lift.
+
+So it's important to know that when an error occurs in a script, loaded from a [different origin](https://developer.mozilla.org/en-US/docs/Web/Security/Same-origin_policy), the details of the error are not reported to prevent leaking information. Instead the error reported is simply **`"Script error."`**. This behavior can be overriden in some browsers using the [`crossorigin`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script#attr-crossorigin) attribute on [`<script>`](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script) and having the server send the appropriate [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) HTTP response headers. A workaround is to isolate **`"Script error."`** and handle it knowing that the error detail is only viewable in the browser console and not accessible via JavaScript.
+
 ```javascript
-listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => { ... })
+/**
+ * msg:      string => The error message
+ * url:      string => URL of the script where the error was raised
+ * lineNo:   number => Line number where error was raised
+ * columnNo: number => Column number for the line where the error occurred
+ * error:    Object => The error object
+ */
+listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => { ... });
 ```

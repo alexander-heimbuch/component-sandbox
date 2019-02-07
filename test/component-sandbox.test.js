@@ -621,5 +621,70 @@ describe('component-sandbox', () => {
           });
       });
     });
+
+    describe('SBX:FOCUS', () => {
+      it(`fires a focus event if an element inside the IFrame received the focus`, done => {
+        sandbox
+          .init(
+            frame,
+            `
+<input type="text">
+<script>
+listen('focus', () => {
+  document.querySelector('input').focus();
+});
+</script>
+`
+          )
+          .then(({ listen, emit }) => {
+            listen('SBX:FOCUS', ({ isDocumentElement }) => {
+              expect(isDocumentElement).to.equal(false);
+              done();
+            });
+
+            emit({ type: 'focus' });
+          });
+      });
+
+      it(`fires a focus event if the IFrame's "documentElement" received the focus`, done => {
+        sandbox
+          .init(
+            frame,
+            `
+<script>
+// Force the 'document.activeElement' to equal the 'document.documentElement'
+Object.defineProperty(document, 'activeElement', {
+  get: () => document.documentElement,
+});
+</script>
+`
+          )
+          .then(({ listen }) => {
+            listen('SBX:FOCUS', ({ isDocumentElement }) => {
+              expect(isDocumentElement).to.equal(true);
+              done();
+            });
+
+            frame.contentWindow.focus();
+          });
+      });
+    });
+
+    describe('SBX:BLUR', () => {
+      it(`fires a focus event when the IFrame loses the focus`, done => {
+        // Add a button to the testbed to have a focusable element outside the IFrame
+        const buttonEl = document.createElement('button');
+        buttonEl.setAttribute('tabindex', 0);
+        buttonEl.innerText = 'Outside Button';
+        testbed.appendChild(buttonEl);
+
+        sandbox.init(frame).then(({ listen }) => {
+          listen('SBX:FOCUS', () => buttonEl.focus());
+          listen('SBX:BLUR', () => done());
+
+          frame.contentWindow.focus();
+        });
+      });
+    });
   });
 });

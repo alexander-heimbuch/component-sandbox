@@ -73,15 +73,26 @@
 
   function focusEventListener() {
     setTimeout(() => {
-      if (document.activeElement === document.documentElement) {
-        window.emit({ type: 'SBX:FOCUS' });
-      }
+      window.emit({
+        type: 'SBX:FOCUS',
+        payload: {
+          isDocumentElement: document.activeElement === document.documentElement
+        }
+      });
+    });
+  }
+
+  function blurEventListener() {
+    setTimeout(() => {
+      window.emit({ type: 'SBX:BLUR' });
     });
   }
 
   window.addEventListener('message', syncEventListener, false);
 
   window.addEventListener('focus', focusEventListener, false);
+
+  window.addEventListener('blur', blurEventListener, false);
 
   window.onerror = (msg, url, lineNo, columnNo, error) => {
     window.emit({ type: 'SBX:ERROR', payload: { msg, url, lineNo, columnNo, error } });
