@@ -178,6 +178,13 @@ describe('component-sandbox', () => {
           done();
         });
       });
+
+      it(`returns an onDestroy callback in a promise`, done => {
+        sandbox.init(frame).then(({ onDestroy }) => {
+          expect(typeof onDestroy).to.equal('function');
+          done();
+        });
+      });
     });
 
     describe(`sandbox api`, () => {
@@ -521,6 +528,18 @@ describe('component-sandbox', () => {
       });
 
       Promise.all([promise1, promise2]).then(() => done());
+    });
+
+    it(`can explicitly invoke an 'onDestroy' callback`, done => {
+      sandbox.init(frame).then(({ onDestroy }) => {
+        const removeListenersSpy = sinon.spy(frame.iFrameResizer, 'removeListeners');
+
+        onDestroy(); // Deregister listeners
+
+        expect(removeListenersSpy).to.have.been.calledWith();
+
+        done();
+      });
     });
   });
 

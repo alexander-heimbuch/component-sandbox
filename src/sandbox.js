@@ -34,9 +34,14 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
       log: false,
       initCallback: () => {
         const listen = createMessageEventListener(channel.port1);
+        const onDestroy = () => {
+          const instance = iframe.iFrameResizer;
+          instance && instance.removeListeners();
+        };
+
         const data = { type: 'SBX:SYN' };
         iframe.contentWindow.postMessage(JSON.stringify(data), '*', [channel.port2]);
-        resolve({ node: iframe, listen, emit });
+        resolve({ node: iframe, listen, emit, onDestroy });
       },
       resizedCallback: ({ height, width, type }) => {
         emit({

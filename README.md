@@ -1,8 +1,8 @@
 # component-sandbox
 
-JavaScript Component Sandbox based on [iFrameResizer](https://github.com/davidjbradshaw/iframe-resizer) with adaptive height and messaging abstraction.
+JavaScript Component Sandbox based on [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) with adaptive height and messaging abstraction.
 
-The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [iFrameResizer](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the IFrame whenever a mutation of the sandboxed contents is detected.
+The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the IFrame whenever a mutation of the sandboxed contents is detected.
 
 ## Browser Compatibility
 
@@ -72,10 +72,9 @@ sandbox
     emit({ type: 'pong', payload: { outer: 'payload' } });
   });
 </script>`)
-  .then(({ emit, listen, node }) => {
+  .then(({ node, emit, listen, onDestroy }) => {
     listen('pong', (payload) => {
       console.log('pong', payload);
-      console.log('node', node);
   });
 
   emit({ type: 'ping', payload: { inner: 'payload' } });
@@ -111,11 +110,11 @@ sandbox.create(attributes?, styles?);
  * iframe:  Node => IFrame node that is already appended to the document
  * content: string => HTML markup injected into the sandbox body
  * options: Object => { baseUrl: '.' } custom meta attributes for the sandbox
- * returns Promise<{ node, listen, emit }>
+ * returns Promise<{ node, listen, emit, onDestroy }>
  */
 sandbox
   .init(iframe, content?, options?)
-  .then(({ node, listen, emit }) => {});
+  .then(({ node, listen, emit, onDestroy }) => {});
 ```
 
 ### Messaging
@@ -204,4 +203,26 @@ So it's important to know that when an error occurs in a script, loaded from a [
  * error:    Object => The error object
  */
 listen('SBX:ERROR', ({ msg, url, lineNo, columnNo, error }) => { ... });
+```
+
+### Component Destruction & Cleanup
+
+Even though the underlying [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) library is kind of smart and aware of situations where the sandboxed IFrame element gets removed from the host, you cannot fully rely on its built-in detection mechanisms in all possible (dynamic) scenarios. In order to provide an explicit way to tell the sandbox that it's about to be destroyed, an `onDestroy` callback method can be extracted from the `sandbox.init`'s promise response.
+
+The `onDestroy` callback method enables a consumer to explicitly inform the `component-sandbox` that a certain sandbox is about to be destroyed now. Internally this helps the library to deregister certain listeners the [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) library adds to both the host and the sandboxed IFrame instance and therefore free up resources and prevent possible memory leaks.
+
+```javascript
+class MyComponent {
+  onInit() {
+    sandbox
+      .init(frame)
+      .then(({ onDestroy }) => {
+        this.state.onDestroy = onDestroy;
+      });
+  }
+
+  onDestroy() {
+    this.state.onDestroy();
+  }
+}
 ```
