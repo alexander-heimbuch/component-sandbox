@@ -1,7 +1,7 @@
 import { defaultAttributes, defaultStyles } from './defaults';
 
 import { createIframe, warn } from './utils';
-import { registerIframeResizer, sandboxContent, charset, base, resizer, resetStyle, iframeApi } from './sandbox';
+import { registerIframeResizer, sandboxContent, charset, base, resizer, iframeApi } from './sandbox';
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles });
 
@@ -51,7 +51,6 @@ const init = (iframe, content = '', { baseUrl } = {}) =>
       iframe,
       head: `${charset()}
       ${base(baseUrl)}
-      ${resetStyle()}
       ${iframeApi()}`,
       body: `${content}
       ${resizer()}`

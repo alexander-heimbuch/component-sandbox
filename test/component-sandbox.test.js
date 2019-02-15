@@ -23,6 +23,8 @@ function getDocument(iframe) {
   return iframe.contentDocument;
 }
 
+const resetStyle = `<style>body { margin: 0; }</style>`;
+
 describe('component-sandbox', () => {
   let testSandbox;
   let testbed;
@@ -97,16 +99,6 @@ describe('component-sandbox', () => {
         sandbox.init(frame).then(({ node }) => {
           const result = getDocument(node).querySelectorAll('meta[charset="utf-8"]');
           expect(result.length).to.equal(1);
-          expect(node).to.equal(frame);
-          done();
-        });
-      });
-
-      it(`applies reset styles`, done => {
-        allowSameOrigin(frame);
-        sandbox.init(frame).then(({ node }) => {
-          const style = getDocument(node).querySelectorAll('style');
-          expect(style.length).to.equal(1);
           expect(node).to.equal(frame);
           done();
         });
@@ -223,7 +215,7 @@ describe('component-sandbox', () => {
 
     describe(`resizing`, () => {
       it(`sets the frame node to its content`, done => {
-        sandbox.init(frame, '<div style="height: 100px"></div>').then(({ node }) => {
+        sandbox.init(frame, `${resetStyle}<div style="height: 100px"></div>`).then(({ node }) => {
           expect(node.offsetHeight).to.equal(100);
           done();
         });
@@ -234,7 +226,7 @@ describe('component-sandbox', () => {
 
         allowSameOrigin(frame);
 
-        sandbox.init(frame, '<div id="test-node"></div>').then(({ node, listen }) => {
+        sandbox.init(frame, `${resetStyle}<div id="test-node"></div>`).then(({ node, listen }) => {
           const testNode = getDocument(frame).getElementById('test-node');
 
           listen('SBX:RESIZE', () => {
@@ -597,7 +589,7 @@ describe('component-sandbox', () => {
 
     describe('SBX:RESIZE', () => {
       it('fires a resize event on init', done => {
-        sandbox.init(frame, '<div style="height: 100px;"></div>').then(({ listen }) => {
+        sandbox.init(frame, `${resetStyle}<div style="height: 100px;"></div>`).then(({ listen }) => {
           listen('SBX:RESIZE', ({ height, type }) => {
             expect(height).to.equal('100');
             expect(type).to.equal('init');
@@ -611,12 +603,13 @@ describe('component-sandbox', () => {
           .init(
             frame,
             `
-          <div style="height: 100px;" id="test"></div>
-          <script>
-            listen('ping', () => {
-              document.getElementById('test').style.height = '500px';
-            });
-          </script>
+${resetStyle}
+<div style="height: 100px;" id="test"></div>
+<script>
+  listen('ping', () => {
+    document.getElementById('test').style.height = '500px';
+  });
+</script>
         `
           )
           .then(({ listen, emit }) => {

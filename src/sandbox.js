@@ -8,12 +8,6 @@ import { createMessageEventListener, toMessage } from './utils';
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
 export const resizer = () => `<script src="${iframeResizerContent}"></script>`;
-export const resetStyle = () => `<style>
-body, html {
-  padding: 0;
-  margin: 0;
-}
-</style>`;
 
 export const iframeApi = () => `<script>var exports = {}; </script>
 <script type="text/javascript" src="${InlineUtils}"></script>
