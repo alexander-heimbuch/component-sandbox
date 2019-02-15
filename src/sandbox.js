@@ -33,9 +33,13 @@ export const registerIframeResizer = ({ iframe, resolve }) => {
           instance && instance.removeListeners();
         };
 
-        const data = { type: 'SBX:SYN' };
-        iframe.contentWindow.postMessage(JSON.stringify(data), '*', [channel.port2]);
-        resolve({ node: iframe, listen, emit, onDestroy });
+        const ackDeregFn = listen('SBX:ACK', () => {
+          ackDeregFn();
+          resolve({ node: iframe, listen, emit, onDestroy });
+        });
+
+        const data = JSON.stringify({ type: 'SBX:SYN' });
+        iframe.contentWindow.postMessage(data, '*', [channel.port2]);
       },
       resizedCallback: ({ height, width, type }) => {
         emit({

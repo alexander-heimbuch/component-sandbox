@@ -55,6 +55,9 @@
       MESSAGE_EVENT_LISTENER = createMessageEventListener(MESSAGE_PORT);
       MESSAGE_PORT.start();
 
+      // Send `SBX:ACK` event
+      window.emit({ type: 'SBX:ACK' });
+
       // Flush listener buffer
       const keys = Object.keys(LISTENER_BUFFER); // Prevent use of `Object.values` here to shim-free keep support for IE11
       keys.forEach(key => {
