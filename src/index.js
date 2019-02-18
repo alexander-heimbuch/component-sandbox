@@ -1,7 +1,7 @@
 import { defaultAttributes, defaultStyles } from './defaults';
 
-import { createIframe, warn } from './utils';
-import { registerIframeResizer, sandboxContent, charset, base, resizer, iframeApi } from './sandbox';
+import { createIframe, isPlainObject, isString, warn } from './utils';
+import { base, charset, iframeApi, registerIframeResizer, resizer, sandboxContent } from './sandbox';
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles });
 
@@ -10,6 +10,15 @@ const init = (iframe, content = '', { baseUrl } = {}) =>
     if (!iframe || !iframe.contentWindow) {
       warn(`initialised iframe is required`);
       return;
+    }
+
+    let bodyContent;
+    let headContent;
+    if (isString(content)) {
+      bodyContent = content;
+    } else if (isPlainObject(content)) {
+      isString(content.body) && (bodyContent = content.body);
+      isString(content.head) && (headContent = content.head);
     }
 
     // Verify `sandbox` attribute
@@ -51,8 +60,9 @@ const init = (iframe, content = '', { baseUrl } = {}) =>
       iframe,
       head: `${charset()}
       ${base(baseUrl)}
-      ${iframeApi()}`,
-      body: `${content}
+      ${iframeApi()}
+      ${headContent || ''}`,
+      body: `${bodyContent || ''}
       ${resizer()}`
     });
   });

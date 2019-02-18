@@ -108,8 +108,8 @@ sandbox.create(attributes?, styles?);
 ```javascript
 /**
  * iframe:  Node => IFrame node that is already appended to the document
- * content: string => HTML markup injected into the sandbox body
- * options: Object => { baseUrl: '.' } custom meta attributes for the sandbox
+ * content: string | { head?: string, body?: string } => HTML markup injected into the sandbox body and/or head
+ * options: { baseUrl: string = '.' } => Custom meta attributes for the sandbox
  * returns Promise<{ node, listen, emit, onDestroy }>
  */
 sandbox

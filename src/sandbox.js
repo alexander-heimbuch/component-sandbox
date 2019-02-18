@@ -78,11 +78,11 @@ window.addEventListener('message', messageHandler, false);
   iframe.setAttribute('src', `data:text/html;charset=utf-8,${scriptContent}`);
 };
 
-export const sandboxContent = ({ iframe, head, body }) => {
+export const sandboxContent = ({ iframe, head = '', body = '' }) => {
   const iframeContent = `<!DOCTYPE html>
 <html lang="en">
-<head>${head}</head>
-<body>${body}</body>
+<head>${head.trim()}</head>
+<body>${body.trim()}</body>
 </html>`;
 
   if ('srcdoc' in document.createElement('iframe')) {
