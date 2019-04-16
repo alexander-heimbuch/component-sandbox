@@ -1,7 +1,8 @@
 import { defaultAttributes, defaultStyles } from './defaults';
-
-import { createIframe, isPlainObject, isString, warn } from './utils';
+import { ComponentSandbox, createIframe, isString, warn } from './utils';
 import { base, charset, iframeApi, registerIframeResizer, resizer, sandboxContent } from './sandbox';
+
+const { isPlainObject } = ComponentSandbox;
 
 const frame = (attributes = defaultAttributes, styles = defaultStyles) => createIframe({ attributes, styles });
 

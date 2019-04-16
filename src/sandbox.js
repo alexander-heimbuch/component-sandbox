@@ -2,8 +2,7 @@ import iframeResizerContent from 'base64-inline-loader!iframe-resizer/js/iframeR
 import InlineUtils from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-utils';
 import InlineScripts from 'base64-inline-loader!babel-loader?{"presets":[["@babel/preset-env", {"modules": "cjs"}]]}!./inline-scripts';
 import { iframeResizer } from 'iframe-resizer';
-
-import { createMessageEventListener, toMessage } from './utils';
+import { ComponentSandbox } from './utils';
 
 export const charset = () => '<meta charset="utf-8">';
 export const base = baseUrl => `<base href="${baseUrl || '.'}">`;
@@ -14,6 +13,8 @@ export const iframeApi = () => `<script>var exports = {}; </script>
 <script type="text/javascript" src="${InlineScripts}"></script>`;
 
 export const registerIframeResizer = ({ iframe, resolve }) => {
+  const { createMessageEventListener, toMessage } = ComponentSandbox;
+
   const channel = new MessageChannel();
   channel.port1.start();
 

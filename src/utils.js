@@ -1,4 +1,4 @@
-export { createMessageEventListener, isPlainObject, toMessage } from './inline-utils';
+export { ComponentSandbox } from './inline-utils';
 
 export function warn(message, ...optionalParams) {
   console.warn(`component-sandbox: ${message}`, ...optionalParams);
