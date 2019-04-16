@@ -10,5 +10,16 @@ module.exports = {
     path: resolve(__dirname, '..', 'dist'),
     libraryTarget: 'commonjs2',
     filename: '[name].js'
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader'
+        }
+      }
+    ]
   }
 };
