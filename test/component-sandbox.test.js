@@ -1,7 +1,10 @@
 /* global sinon describe it expect beforeEach afterEach */
+import { functions } from 'lodash';
 import sandbox from 'component-sandbox';
-import { createMessageEventListener } from '../src/utils';
+import { ComponentSandbox } from '../src/utils';
 import { defaultAttributes, defaultStyles } from '../src/defaults';
+
+const { createMessageEventListener, isPlainObject, safeParse, toMessage } = ComponentSandbox;
 
 function allowSameOrigin(iframe) {
   const sandboxAttr = iframe.getAttribute('sandbox') || '';
@@ -196,6 +199,40 @@ describe('component-sandbox', () => {
         });
       });
 
+      it(`prevents modifications to the 'listen function on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => delete node.contentWindow.listen).to.throw();
+          done();
+        });
+      });
+
+      it(`defines a 'subscribe' function on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(typeof node.contentWindow.subscribe).to.equal('function');
+          done();
+        });
+      });
+
+      it(`sandboxes the 'subscribe' function on sandbox scope`, done => {
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => node.contentWindow.subscribe).to.throw();
+          done();
+        });
+      });
+
+      it(`prevents modifications to the 'subscribe function on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => delete node.contentWindow.subscribe).to.throw();
+          done();
+        });
+      });
+
       it(`defines an 'emit' function on sandbox scope`, done => {
         allowSameOrigin(frame);
 
@@ -208,6 +245,50 @@ describe('component-sandbox', () => {
       it(`sandboxes the 'emit' function on sandbox scope`, done => {
         sandbox.init(frame).then(({ node }) => {
           expect(() => node.contentWindow.emit).to.throw();
+          done();
+        });
+      });
+
+      it(`prevents modifications to the 'emit' function on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => delete node.contentWindow.emit).to.throw();
+          done();
+        });
+      });
+
+      it(`defines a 'ComponentSandbox' constant on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(typeof node.contentWindow.ComponentSandbox).to.equal('object');
+          expect(functions(node.contentWindow.ComponentSandbox)).to.deep.equal([
+            createMessageEventListener.name,
+            isPlainObject.name,
+            safeParse.name,
+            toMessage.name
+          ]);
+          done();
+        });
+      });
+
+      it(`sandboxes the 'ComponentSandbox' constant on sandbox scope`, done => {
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => node.contentWindow.ComponentSandbox).to.throw();
+          done();
+        });
+      });
+
+      it(`prevents modifications to the 'ComponentSandbox' constant on sandbox scope`, done => {
+        allowSameOrigin(frame);
+
+        sandbox.init(frame).then(({ node }) => {
+          expect(() => delete node.contentWindow.ComponentSandbox).to.throw();
+          expect(() => delete node.contentWindow.ComponentSandbox[createMessageEventListener.name]).to.throw();
+          expect(() => delete node.contentWindow.ComponentSandbox[isPlainObject.name]).to.throw();
+          expect(() => delete node.contentWindow.ComponentSandbox[safeParse.name]).to.throw();
+          expect(() => delete node.contentWindow.ComponentSandbox[toMessage.name]).to.throw();
           done();
         });
       });

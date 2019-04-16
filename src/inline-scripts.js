@@ -1,5 +1,7 @@
-/* global createMessageEventListener, safeParse, toMessage */
+/* global ComponentSandbox */
 (() => {
+  const { createMessageEventListener, isPlainObject, safeParse, toMessage } = ComponentSandbox;
+
   let LISTENER_ID = 0;
   let LISTENER_BUFFER = {};
   let LISTENER_DEREGS = {};
@@ -7,43 +9,68 @@
   let MESSAGE_PORT;
   let MESSAGE_EVENT_LISTENER;
 
+  function subscribe(evt, cb, src) {
+    if (!MESSAGE_EVENT_LISTENER) {
+      // The message port hasn't been provided yet by the host => Create proxy listener and deregister handler
+      const id = LISTENER_ID++;
+      LISTENER_BUFFER[id] = { evt, cb, src };
+      return () => {
+        if (LISTENER_DEREGS && LISTENER_DEREGS[id]) {
+          LISTENER_DEREGS[id]();
+          delete LISTENER_DEREGS[id];
+        }
+        if (LISTENER_BUFFER && LISTENER_BUFFER[id]) {
+          delete LISTENER_BUFFER[id];
+        }
+      };
+    } else {
+      // Register listener and return deregister handler
+      return MESSAGE_EVENT_LISTENER(evt, cb, src);
+    }
+  }
+
+  function emit(obj) {
+    if (!MESSAGE_PORT) {
+      EVENT_BUFFER.push(obj);
+    } else {
+      const { message, transfer } = toMessage(obj);
+      MESSAGE_PORT.postMessage(message, transfer);
+    }
+  }
+
+  // Prevent modifications to global `listen`, `subscribe` and `emit`
   Object.defineProperty(window, 'listen', {
     configurable: false,
     writable: false,
     enumerable: false,
-    value: (evt, cb, src) => {
-      if (!MESSAGE_EVENT_LISTENER) {
-        // The message port hasn't been provided yet by the host => Create proxy listener and deregister handler
-        const id = LISTENER_ID++;
-        LISTENER_BUFFER[id] = { evt, cb, src };
-        return () => {
-          if (LISTENER_DEREGS && LISTENER_DEREGS[id]) {
-            LISTENER_DEREGS[id]();
-            delete LISTENER_DEREGS[id];
-          }
-          if (LISTENER_BUFFER && LISTENER_BUFFER[id]) {
-            delete LISTENER_BUFFER[id];
-          }
-        };
-      } else {
-        // Register listener and return deregister handler
-        return MESSAGE_EVENT_LISTENER(evt, cb, src);
-      }
-    }
+    value: subscribe
+  });
+
+  Object.defineProperty(window, 'subscribe', {
+    configurable: false,
+    writable: false,
+    enumerable: false,
+    value: subscribe
   });
 
   Object.defineProperty(window, 'emit', {
     configurable: false,
     writable: false,
     enumerable: false,
-    value: obj => {
-      if (!MESSAGE_PORT) {
-        EVENT_BUFFER.push(obj);
-      } else {
-        const { message, transfer } = toMessage(obj);
-        MESSAGE_PORT.postMessage(message, transfer);
-      }
-    }
+    value: emit
+  });
+
+  // Prevent modifications to global `ComponentSandbox`
+  [isPlainObject, safeParse, toMessage, createMessageEventListener].forEach(fn => {
+    Object.defineProperty(ComponentSandbox, fn.name, {
+      configurable: false,
+      writable: false
+    });
+  });
+
+  Object.defineProperty(window, 'ComponentSandbox', {
+    configurable: false,
+    writable: false
   });
 
   function syncEventListener({ data, ports }) {
