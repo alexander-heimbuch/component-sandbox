@@ -6,6 +6,8 @@
   let LISTENER_BUFFER = {};
   let LISTENER_DEREGS = {};
   let EVENT_BUFFER = [];
+  let CALLBACK_ID = 0;
+  let CALLBACK_BUFFER = {};
   let MESSAGE_PORT;
   let MESSAGE_EVENT_LISTENER;
 
@@ -29,12 +31,21 @@
     }
   }
 
-  function emit(obj) {
+  function emit(obj, cb) {
     if (!MESSAGE_PORT) {
-      EVENT_BUFFER.push(obj);
+      EVENT_BUFFER.push({ obj, cb });
     } else {
       const { message, transfer } = toMessage(obj);
-      MESSAGE_PORT.postMessage(message, transfer);
+
+      let callbackId;
+      if (typeof cb === 'function') {
+        // Generate a unique callback ID and store the callback in a buffer
+        // Pass the callback ID to the recipient/host as part of the message
+        callbackId = `c${Date.now()}${++CALLBACK_ID}`;
+        CALLBACK_BUFFER[callbackId] = cb;
+      }
+
+      MESSAGE_PORT.postMessage(callbackId ? { ...message, callback: callbackId } : message, transfer);
     }
   }
 
@@ -93,7 +104,7 @@
       });
 
       // Flush event buffer
-      EVENT_BUFFER.forEach(window.emit);
+      EVENT_BUFFER.forEach(({ obj, cb }) => window.emit(obj, cb));
 
       // Remove buffers
       LISTENER_BUFFER = null;
@@ -136,6 +147,14 @@
 
   window.listen('SBX:ECHO', ({ type, payload, source, transfer }) => {
     window.emit({ type, payload, source, transfer });
+  });
+
+  window.listen('SBX:CBK', (payload, { callback, source, transfer }) => {
+    if (typeof callback === 'string' && CALLBACK_BUFFER[callback]) {
+      // Invoke a certain stored callback and remove it immediately after its invocation
+      CALLBACK_BUFFER[callback](payload, { source, transfer });
+      delete CALLBACK_BUFFER[callback];
+    }
   });
 
   // Remove security relevant properties from the sandboxed `window` object

@@ -1,8 +1,8 @@
 # component-sandbox
 
-JavaScript Component Sandbox based on [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) with adaptive height and messaging abstraction.
+`component-sandbox` is a JavaScript library based on [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) with adaptive height and messaging abstraction.
 
-The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the IFrame whenever a mutation of the sandboxed contents is detected.
+The goal of this project is to create a secure sandbox around UI components to support a seamless integration of custom components/code inside a host application. The sandbox internally uses the [`iFrameResizer`](https://github.com/davidjbradshaw/iframe-resizer) to automatically resize the IFrame's height whenever a mutation of the sandboxed contents is detected.
 
 ## Browser Compatibility
 
@@ -34,7 +34,7 @@ It's possible to define one or more [`Transferable`](https://developer.mozilla.o
 ## Installation
 
 ```bash
-npm install component-sandbox --save
+npm i component-sandbox --save
 ```
 
 or
@@ -45,41 +45,44 @@ yarn add component-sandbox
 
 ## Usage
 
-1. Import the component-sandbox lib
+1. Import the `component-sandbox` library in your code
 
-```javascript
-import sandbox from 'component-sandbox';
-```
+    ```javascript
+    import sandbox from 'component-sandbox';
+    ```
 
-2. Create a IFrame node and attach it to the document
+2. Either create an IFrame node programmatically and attach it to the document, or simply skip this step if you already have an IFrame node in your markup.
 
-```javascript
-// helper with base attributes for IFrame, you can also create an IFrame node by yourself
-const frame = sandbox.frame();
-
-document.body.appendChild(frame);
-```
+    ```javascript
+    // helper with base attributes for IFrame, you can also create an IFrame node by yourself
+    const frame = sandbox.frame();
+    
+    document.body.appendChild(frame);
+    ```
 
 3. Initialise the sandbox
 
-```javascript
-// Any valid html markup can be used, content is injected into the IFrame body
-sandbox
-  .init(frame, `
-<script>
-  listen('ping', function (payload) {
-    console.log('ping', payload);
-    emit({ type: 'pong', payload: { outer: 'payload' } });
-  });
-</script>`)
-  .then(({ node, emit, listen, onDestroy }) => {
-    listen('pong', (payload) => {
-      console.log('pong', payload);
-  });
+    ```javascript
+    // Any valid html markup can be used, content is injected into the IFrame body
+    // Be aware of the fact that the code is injected as-is, means you need to make sure
+    // that the injected code is suitable for the browsers you are targeting (ES6 vs. ES5, etc.)
 
-  emit({ type: 'ping', payload: { inner: 'payload' } });
-})
-```
+    sandbox
+      .init(frame, `
+    <script>
+      listen('ping', function (payload) {
+        console.log('ping', payload);
+        emit({ type: 'pong', payload: { outer: 'payload' } });
+      });
+    </script>`)
+      .then(({ node, emit, listen, onDestroy }) => {
+        listen('pong', (payload) => {
+          console.log('pong', payload);
+      });
+    
+      emit({ type: 'ping', payload: { inner: 'payload' } });
+    })
+    ```
 
 **Note**
 
@@ -122,12 +125,15 @@ sandbox
 To communicate between the parent and the sandbox a messaging API is available. The `listen` and `emit` methods to communicate from the parent to the sandbox are available in the resolved `sandbox.init` call. Inside the sandbox the `emit` and `listen` methods are available on the global scope.
 
 ```javascript
-emit({
-  type: string,
-  payload: any,
-  source?: any,
-  transfer?: Transferable | Transferable[]
-});
+emit(
+  message: {
+    type: string;
+    payload?: any;
+    source?: any;
+    transfer?: Transferable | Transferable[];
+  },
+  callback?: (payload?: any) => void
+);
 ```
 
 ```javascript
@@ -137,7 +143,8 @@ listen(
     payload: any,
     context?: {
       source?: any,
-      transfer?: Transferable[]
+      transfer?: Transferable[],
+      callback?: string
     }
   ) => void,
   source?: any
@@ -184,6 +191,53 @@ This event is the counterpart of the `SBX:FOCUS` event. It can be used to explic
 
 ```javascript
 listen('SBX:BLUR', () => { ... });
+```
+
+### Callback Functions
+
+Communication between a sandbox and its host is an asynchronous process. If you have a scenario where a sandbox wants to request the host to do a certain thing on its behalf and then at a later point in time get informed about the result of that request, this process involves at least these 4 steps:
+
+1. Sandbox `emit`s an event with the intention to start a certain process
+    ```javascript
+    emit({ type: 'process:start' });
+    ```
+2. Host `subscribe`s to that event and starts the actual processing
+    ```javascript
+    subscribe('process:start', () => { ... });
+    ```
+3. Host `emit`s the result of the processing via an event
+    ```javascript
+    emit({ type: 'process:end', payload: { ... } });
+    ```
+4. Sandbox `subscribe`s to that event and uses the result
+    ```javascript
+    subscribe('process:end', (payload) => { ... });
+    ```
+
+This 4-step process (including 2 disconnected steps on the sandbox's side) can be simplified from the sandbox's perspective via the use of callback functions:
+
+```javascript
+emit({ type: 'process' }, (payload) => { ... });
+```
+
+In that case, all the sandbox has to do is sending a request to the host along with a callback function in order to be informed about the host's response later. This saves the sandbox implementors from having to subscribe to some kind of response event. Under the hood this whole process still needs to be a complex multi-step asynchronous scenario, yet from a sandbox implementor's perspective the handling of that whole process as well as the related code becomes way more convenient.
+
+Using callback functions along with a [MessageChannel](https://developer.mozilla.org/en-US/docs/Web/API/MessageChannel) interface relies on some syntactical sugar on the `component-sandbox`'s end, because it's not possible by design to pass functions as part of messages via [Window.postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) or [MessagePort.postMessage](https://developer.mozilla.org/en-US/docs/Web/API/MessagePort/postMessage) between different browsing contexts.
+
+What `component-sandbox` under the hood does is:
+
+1. Take a given callback function which is passed as a second parameter in the `emit` method
+2. Generate a unique ID for the callback function
+3. Store the callback function inside a key-value container on the sandbox's side using the generated ID as the key (so that it can be accessed easily)
+4. Pass the generated ID to the host so that the host can store it
+5. Provide a listener for the system event `SBX:CBK` which the host can `emit` to request the invocation of a certain stored callback function along with a given payload
+
+```javascript
+emit({
+  type: 'SBX:CBK',
+  callback: '${callbackId}',
+  payload: { ... }
+});
 ```
 
 ### Error Handling
