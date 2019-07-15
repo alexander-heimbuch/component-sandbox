@@ -370,7 +370,7 @@ describe('component-sandbox', () => {
           frame,
           `
             <script>
-              listen('ping', (payload, { source, transfer }) => {
+              listen('ping', (payload, { transfer }) => {
                 if (payload === 'ping1') {
                   transfer[0].postMessage({ type: 'pong', payload });
                 } else {
@@ -614,6 +614,32 @@ describe('component-sandbox', () => {
         done();
       });
     });
+
+    it(`can pass a callback ID with 'emit' to be invoked later via 'SBX:CBK'`, done => {
+      sandbox
+        .init(
+          frame,
+          `
+            <script>
+              listen('ping', () => {
+                const cb = (payload) => emit({ type: 'done', payload });
+                emit({ type: 'pong' }, cb);
+              });
+            </script>
+        `
+        )
+        .then(({ listen, emit }) => {
+          listen('pong', (payload, { callback }) => {
+            emit({ type: 'SBX:CBK', payload: 'done', callback });
+          });
+          listen('done', payload => {
+            expect(payload).to.equal('done');
+            done();
+          });
+
+          emit({ type: 'ping' });
+        });
+    });
   });
 
   describe('content location', () => {
@@ -721,10 +747,10 @@ ${resetStyle}
           .init(
             frame,
             `
-<input type="text">
+<button type="button" tabindex="0">Button</button>
 <script>
 listen('focus', () => {
-  document.querySelector('input').focus();
+  document.querySelector('button').dispatchEvent(new Event('focus', { bubbles: true }));
 });
 </script>
 `
@@ -749,16 +775,20 @@ listen('focus', () => {
 Object.defineProperty(document, 'activeElement', {
   get: () => document.documentElement,
 });
+
+listen('focus', () => {
+  document.body.dispatchEvent(new Event('focus', { bubbles: true }));
+});
 </script>
 `
           )
-          .then(({ listen }) => {
+          .then(({ listen, emit }) => {
             listen('SBX:FOCUS', ({ isDocumentElement }) => {
               expect(isDocumentElement).to.equal(true);
               done();
             });
 
-            frame.contentWindow.focus();
+            emit({ type: 'focus' });
           });
       });
     });
@@ -771,12 +801,23 @@ Object.defineProperty(document, 'activeElement', {
         buttonEl.innerText = 'Outside Button';
         testbed.appendChild(buttonEl);
 
-        sandbox.init(frame).then(({ listen }) => {
-          listen('SBX:FOCUS', () => buttonEl.focus());
-          listen('SBX:BLUR', () => done());
+        sandbox
+          .init(
+            frame,
+            `
+<script>
+listen('focus', () => {
+  document.body.dispatchEvent(new Event('focus', { bubbles: true }));
+  document.body.dispatchEvent(new Event('blur', { bubbles: true }));
+});
+</script>
+`
+          )
+          .then(({ listen, emit }) => {
+            listen('SBX:BLUR', () => done());
 
-          frame.contentWindow.focus();
-        });
+            emit({ type: 'focus' });
+          });
       });
     });
   });
